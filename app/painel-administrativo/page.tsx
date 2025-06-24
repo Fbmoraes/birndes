@@ -43,63 +43,19 @@ import {
 import Image from "next/image"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { useStore, type Product, type CatalogItem } from "@/lib/store"
+import { useStore, type Product, type CatalogItem } from "@/lib/store-new"
+import { useDataInitialization } from "@/hooks/use-data-initialization"
 
 export default function PainelAdministrativoPage() {
   const router = useRouter()
-  const {
-    products,
-    catalogItems,
-    addProduct,
-    updateProduct,
-    deleteProduct,
-    addCatalogItem,
-    updateCatalogItem,
-    deleteCatalogItem,
-    isAuthenticated,
-    logout,
-    settings,
-    updateSettings,
-  } = useStore()
-
-  const [activeTab, setActiveTab] = useState<"products" | "catalog" | "seo" | "settings">("products")
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-  const [isCatalogDialogOpen, setIsCatalogDialogOpen] = useState(false)
-  const [isEditCatalogDialogOpen, setIsEditCatalogDialogOpen] = useState(false)
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null)
-  const [editingCatalogItem, setEditingCatalogItem] = useState<CatalogItem | null>(null)
-
-  const [productForm, setProductForm] = useState({
-    name: "",
-    description: "",
-    price: "",
-    category: "",
-    showOnHome: false,
-    images: [] as string[],
-    mainImage: "",
-    personalization: "",
-    productionTime: "",
-  })
-
-  const [catalogForm, setCatalogForm] = useState({
-    title: "",
-    description: "",
-    backgroundColor: "bg-pink-200",
-    textColor: "text-pink-700",
-    buttonColor: "border-pink-500 text-pink-500 hover:bg-pink-50",
-    productIds: [] as number[],
-    slug: "",
-    image: "",
-  })
-
-  const [settingsForm, setSettingsForm] = useState(settings)
+  const { products, catalogItems, addProduct, updateProduct, deleteProduct, addCatalogItem, updateCatalogItem, deleteCatalogItem, isAuthenticated, logout, settings, updateSettings } = useStore()
+  const { isLoading } = useDataInitialization()
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!isLoading && !isAuthenticated) {
       router.push("/area-administrativa")
     }
-  }, [isAuthenticated, router])
+  }, [isAuthenticated, isLoading, router])
 
   useEffect(() => {
     setSettingsForm(settings)

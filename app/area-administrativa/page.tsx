@@ -11,7 +11,7 @@ import Image from "next/image"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Header from "@/components/header"
-import { useStore } from "@/lib/store"
+import { useStore } from "@/lib/store-new"
 
 export default function AreaAdministrativaPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -31,11 +31,12 @@ export default function AreaAdministrativaPage() {
     }))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
 
-    if (login(formData.usuario, formData.senha)) {
+    const success = await login(formData.usuario, formData.senha)
+    if (success) {
       router.push("/painel-administrativo")
     } else {
       setError("Credenciais inválidas!")
