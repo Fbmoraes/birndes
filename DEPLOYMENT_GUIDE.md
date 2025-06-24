@@ -16,7 +16,7 @@ This guide will help you deploy your PrintsBrindes website to Vercel with full d
    - `vercel.json` (deployment configuration)
    - `app/api/` folder (API endpoints)
    - Updated components with responsive design
-   - `next.config.mjs` (updated for Vercel deployment)
+   - `next.config.js` (updated for Vercel deployment - now using CommonJS syntax)
 
 ## Step 2: Connect to Vercel
 

@@ -1,4 +1,4 @@
-/** @type {import('next').NextConfig} */
+/** @type {import("next").NextConfig} */
 const nextConfig = {
   trailingSlash: true,
   skipTrailingSlashRedirect: true,
@@ -11,13 +11,13 @@ const nextConfig = {
   images: {
     unoptimized: true
   },
-  assetPrefix: '',
-  basePath: '',
+  assetPrefix: "",
+  basePath: "",
   experimental: {
     esmExternals: false
   }
-}
+};
 
-export default nextConfig
+module.exports = nextConfig;
 
 
