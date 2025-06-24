@@ -51,6 +51,39 @@ export default function PainelAdministrativoPage() {
   const { products, catalogItems, addProduct, updateProduct, deleteProduct, addCatalogItem, updateCatalogItem, deleteCatalogItem, isAuthenticated, logout, settings, updateSettings } = useStore()
   const { isLoading } = useDataInitialization()
 
+  const [activeTab, setActiveTab] = useState<"products" | "catalog" | "seo" | "settings">("products")
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+  const [isCatalogDialogOpen, setIsCatalogDialogOpen] = useState(false)
+  const [isEditCatalogDialogOpen, setIsEditCatalogDialogOpen] = useState(false)
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null)
+  const [editingCatalogItem, setEditingCatalogItem] = useState<CatalogItem | null>(null)
+
+  const [productForm, setProductForm] = useState({
+    name: "",
+    description: "",
+    price: "",
+    category: "",
+    showOnHome: false,
+    images: [] as string[],
+    mainImage: "",
+    personalization: "",
+    productionTime: "",
+  })
+
+  const [catalogForm, setCatalogForm] = useState({
+    title: "",
+    description: "",
+    backgroundColor: "bg-pink-200",
+    textColor: "text-pink-700",
+    buttonColor: "border-pink-500 text-pink-500 hover:bg-pink-50",
+    productIds: [] as number[],
+    slug: "",
+    image: "",
+  })
+
+  const [settingsForm, setSettingsForm] = useState(() => settings || { socialMedia: { facebook: '', instagram: '', whatsapp: '' }, seo: { title: '', description: '', keywords: '' } }) } })) } })
+
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.push("/area-administrativa")
@@ -58,7 +91,9 @@ export default function PainelAdministrativoPage() {
   }, [isAuthenticated, isLoading, router])
 
   useEffect(() => {
-    setSettingsForm(settings)
+    if (settings) {
+      setSettingsForm(settings)
+    }
   }, [settings])
 
   const handleLogout = () => {
