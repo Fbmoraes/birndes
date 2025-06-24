@@ -82,7 +82,12 @@ export default function PainelAdministrativoPage() {
     image: "",
   })
 
-  const [settingsForm, setSettingsForm] = useState(() => settings || { socialMedia: { facebook: '', instagram: '', whatsapp: '' }, seo: { title: '', description: '', keywords: '' } }) } })) } })
+  const [settingsForm, setSettingsForm] = useState(() => ({
+    email: "",
+    whatsappNumber: "",
+    socialMedia: { facebook: "", instagram: "", whatsapp: "" },
+    seo: { title: "", description: "", keywords: "" }
+  }));
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -92,7 +97,20 @@ export default function PainelAdministrativoPage() {
 
   useEffect(() => {
     if (settings) {
-      setSettingsForm(settings)
+      setSettingsForm({
+        email: settings.email || "",
+        whatsappNumber: settings.whatsappNumber || "",
+        socialMedia: {
+          facebook: settings.socialMedia?.facebook || "",
+          instagram: settings.socialMedia?.instagram || "",
+          whatsapp: settings.socialMedia?.whatsapp || "",
+        },
+        seo: {
+          title: settings.seo?.title || "",
+          description: settings.seo?.description || "",
+          keywords: settings.seo?.keywords || "",
+        }
+      });
     }
   }, [settings])
 
@@ -412,7 +430,7 @@ ${imageMessage}
   }
 
   const totalProducts = products.length
-  const totalValue = products.reduce((sum, product) => sum + product.price, 0)
+  const totalValue = products.reduce((sum, product) => sum + Number(product.price), 0)
   const totalCategories = new Set(products.map((p) => p.category)).size
 
   if (!isAuthenticated) {
@@ -740,7 +758,7 @@ ${imageMessage}
                           </td>
                           <td className="py-4 px-4">
                             <span className="font-medium text-gray-800">
-                              R$ {product.price.toFixed(2).replace(".", ",")}
+                              R$ {Number(product.price).toFixed(2).replace(".", ",")}
                             </span>
                           </td>
                           <td className="py-4 px-4">
@@ -1391,7 +1409,7 @@ ${imageMessage}
               <Label htmlFor="editCategory">Categoria</Label>
               <Input
                 id="editCategory"
-                value={productForm.category}
+                value={productForm.category || ""} // Garante string
                 onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
                 required
               />
