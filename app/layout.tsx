@@ -75,15 +75,6 @@ export const metadata: Metadata = {
     images: ["/logo-og.png"],
     creator: "@printsbrindes",
   },
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-  },
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ec4899" },
-    { media: "(prefers-color-scheme: dark)", color: "#ec4899" },
-  ],
   manifest: "/manifest.json",
   alternates: {
     canonical: "https://printsbrindes.com.br",
@@ -95,6 +86,16 @@ export const metadata: Metadata = {
   },
   category: "shopping",
     generator: 'v0.dev'
+}
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ec4899" },
+    { media: "(prefers-color-scheme: dark)", color: "#ec4899" },
+  ],
 }
 
 export default function RootLayout({
