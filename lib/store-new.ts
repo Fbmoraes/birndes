@@ -355,3 +355,12 @@ export const useStore = create<Store>()(
   ),
 )
 
+const { isLoading, isAuthenticated } = useStore()
+
+if (isLoading) {
+  return <div>Carregando...</div>
+}
+if (!isAuthenticated) {
+  return null // O useEffect já faz o redirect
+}
+

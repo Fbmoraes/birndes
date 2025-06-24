@@ -433,8 +433,12 @@ ${imageMessage}
   const totalValue = products.reduce((sum, product) => sum + Number(product.price), 0)
   const totalCategories = new Set(products.map((p) => p.category)).size
 
-  if (!isAuthenticated) {
+  if (isLoading) {
     return <div>Carregando...</div>
+  }
+  if (!isAuthenticated) {
+    // O useEffect já faz o redirect, pode retornar null
+    return null
   }
 
   return (
