@@ -1,7 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  trailingSlash: true,
-  skipTrailingSlashRedirect: true,
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -9,13 +7,14 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
-    unoptimized: true
+    unoptimized: true,
+    domains: [],
+    remotePatterns: []
   },
-  assetPrefix: '',
-  basePath: '',
   experimental: {
-    esmExternals: false
-  }
+    serverComponentsExternalPackages: []
+  },
+  output: 'standalone'
 }
 
 export default nextConfig
