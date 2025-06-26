@@ -151,6 +151,8 @@ export const useStore = create<Store>()(
 
       // Fetch data from API
       fetchData: async () => {
+        const currentState = get()
+        
         try {
           set({ isLoading: true })
           const data = await apiCall('store')
@@ -159,7 +161,7 @@ export const useStore = create<Store>()(
           const validData = {
             products: Array.isArray(data.products) ? data.products : [],
             catalogItems: Array.isArray(data.catalogItems) ? data.catalogItems : [],
-            settings: data.settings || get().settings,
+            settings: data.settings || currentState.settings,
           }
           
           set({
@@ -174,8 +176,10 @@ export const useStore = create<Store>()(
           })
         } catch (error) {
           console.error('Failed to fetch data:', error)
+          // Always ensure isLoading is set to false
           set({ isLoading: false })
-          throw error
+          // Don't throw error to prevent initialization from failing
+          console.warn('Using existing data due to fetch error')
         }
       },
 
@@ -372,9 +376,11 @@ export const useStore = create<Store>()(
             body: JSON.stringify({ action: 'check' }),
           })
           set({ isAuthenticated: result.authenticated })
+          console.log('Auth check completed:', result.authenticated)
         } catch (error) {
           console.error('Auth check failed:', error)
           set({ isAuthenticated: false })
+          // Don't throw - just set to false
         }
       },
     }),

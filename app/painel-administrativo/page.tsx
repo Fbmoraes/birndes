@@ -44,12 +44,10 @@ import Image from "next/image"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useStore, type Product, type CatalogItem } from "@/lib/store-new"
-import { useDataInitialization } from "@/hooks/use-data-initialization"
 
 export default function PainelAdministrativoPage() {
   const router = useRouter()
   const { products, catalogItems, addProduct, updateProduct, deleteProduct, addCatalogItem, updateCatalogItem, deleteCatalogItem, isAuthenticated, logout, settings, updateSettings } = useStore()
-  const { isLoading } = useDataInitialization()
 
   const [activeTab, setActiveTab] = useState<"products" | "catalog" | "seo" | "settings">("products")
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
@@ -90,10 +88,10 @@ export default function PainelAdministrativoPage() {
   }));
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (!isAuthenticated) {
       router.push("/area-administrativa")
     }
-  }, [isAuthenticated, isLoading, router])
+  }, [isAuthenticated, router])
 
   useEffect(() => {
     if (settings) {
@@ -433,9 +431,6 @@ ${imageMessage}
   const totalValue = products.reduce((sum, product) => sum + Number(product.price), 0)
   const totalCategories = new Set(products.map((p) => p.category)).size
 
-  if (isLoading) {
-    return <div>Carregando...</div>
-  }
   if (!isAuthenticated) {
     // O useEffect já faz o redirect, pode retornar null
     return null
