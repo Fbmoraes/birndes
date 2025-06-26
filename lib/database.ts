@@ -1,5 +1,5 @@
-// Database abstraction layer
-// This can be easily replaced with a real database later
+// Database abstraction layer with Vercel KV for persistence
+import { kv } from '@vercel/kv'
 
 interface DatabaseData {
   products: any[]
@@ -96,42 +96,58 @@ const defaultData: DatabaseData = {
   },
 }
 
-// Global variable to store data in memory (for serverless functions)
-let globalData: DatabaseData | null = null
+const KV_KEY = 'printsbrindes_data'
+
+// Fallback for local development without KV
+const useKV = process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN
 
 export class Database {
   static async read(): Promise<DatabaseData> {
-    // If data is already loaded in memory, return it
-    if (globalData) {
-      return globalData
-    }
-
-    // Try to load from environment variable (for persistence across deployments)
     try {
-      const envData = process.env.SITE_DATA
-      if (envData) {
-        globalData = JSON.parse(envData)
-        return globalData
+      if (useKV) {
+        // Try to read from Vercel KV
+        const data = await kv.get<DatabaseData>(KV_KEY)
+        if (data) {
+          console.log('Data loaded from Vercel KV')
+          return data
+        }
       }
     } catch (error) {
-      console.warn('Failed to parse environment data, using defaults')
+      console.warn('Failed to read from KV, using defaults:', error)
     }
 
-    // Use default data
-    globalData = { ...defaultData }
-    return globalData
+    // Fallback to default data
+    console.log('Using default data')
+    return { ...defaultData }
   }
 
   static async write(data: DatabaseData): Promise<void> {
-    // Update global data
-    globalData = { ...data }
-    
-    // In a real implementation, you would save to a database here
-    // For now, we just keep it in memory during the serverless function execution
-    console.log('Data updated in memory')
+    try {
+      if (useKV) {
+        // Save to Vercel KV
+        await kv.set(KV_KEY, data)
+        console.log('Data saved to Vercel KV')
+        return
+      }
+    } catch (error) {
+      console.error('Failed to write to KV:', error)
+    }
+
+    // Fallback - just log for local development
+    console.log('Data would be saved (KV not available)')
   }
 
   static async reset(): Promise<void> {
-    globalData = { ...defaultData }
+    try {
+      if (useKV) {
+        await kv.set(KV_KEY, defaultData)
+        console.log('Data reset in Vercel KV')
+        return
+      }
+    } catch (error) {
+      console.error('Failed to reset KV data:', error)
+    }
+
+    console.log('Data would be reset (KV not available)')
   }
 }

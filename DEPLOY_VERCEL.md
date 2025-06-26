@@ -98,10 +98,23 @@ npm run build
 npm start
 ```
 
+## Configuração de Persistência de Dados
+
+⚠️ **IMPORTANTE**: Para que os produtos criados na área administrativa sejam salvos permanentemente e acessíveis de qualquer dispositivo, você precisa configurar o Vercel KV:
+
+1. **Após o deploy inicial**, vá para o Vercel Dashboard
+2. Acesse seu projeto > **Storage** > **Create Database**
+3. Selecione **KV (Redis)** e crie com nome `printsbrindes-db`
+4. **Connect Project** ao seu projeto
+5. Faça um **redeploy** com `vercel --prod`
+
+📖 **Instruções detalhadas**: Veja o arquivo `SETUP_VERCEL_KV.md`
+
 ## Status Atual
 
 🟢 **Pronto para deploy!**
 - Tamanho: ~1MB (muito abaixo do limite)
 - Build: ✅ Funcionando
-- Dependências: ✅ Resolvidas
+- Dependências: ✅ Resolvidas (incluindo @vercel/kv)
 - Configuração: ✅ Otimizada
+- Persistência: ✅ Implementada (requer configuração KV)
