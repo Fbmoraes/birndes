@@ -145,27 +145,95 @@ export default function PainelAdministrativoPage() {
     })
   }
 
-  // Optimized image handling with size compression
-  const compressImage = (file: File, maxWidth: number = 800, quality: number = 0.7): Promise<string> => {
+  // Enhanced image compression with better error handling
+  const compressImage = (file: File, maxWidth: number = 400, quality: number = 0.5): Promise<string> => {
     return new Promise((resolve, reject) => {
+      console.log('Starting image compression:', {
+        fileName: file.name,
+        originalSize: file.size,
+        maxWidth,
+        quality
+      })
+
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        reject(new Error('Arquivo deve ser uma imagem'))
+        return
+      }
+
       const canvas = document.createElement('canvas')
       const ctx = canvas.getContext('2d')
+      
+      if (!ctx) {
+        reject(new Error('Não foi possível criar contexto do canvas'))
+        return
+      }
+
       const img = new Image()
       
       img.onload = () => {
-        // Calculate new dimensions
-        const ratio = Math.min(maxWidth / img.width, maxWidth / img.height)
-        canvas.width = img.width * ratio
-        canvas.height = img.height * ratio
-        
-        // Draw and compress
-        ctx?.drawImage(img, 0, 0, canvas.width, canvas.height)
-        const compressedDataUrl = canvas.toDataURL('image/jpeg', quality)
-        resolve(compressedDataUrl)
+        try {
+          console.log('Image loaded:', {
+            originalWidth: img.width,
+            originalHeight: img.height
+          })
+
+          // Calculate new dimensions maintaining aspect ratio
+          let { width, height } = img
+          
+          if (width > height) {
+            if (width > maxWidth) {
+              height = (height * maxWidth) / width
+              width = maxWidth
+            }
+          } else {
+            if (height > maxWidth) {
+              width = (width * maxWidth) / height
+              height = maxWidth
+            }
+          }
+
+          // Set canvas dimensions
+          canvas.width = width
+          canvas.height = height
+
+          // Clear canvas and draw image
+          ctx.clearRect(0, 0, width, height)
+          ctx.drawImage(img, 0, 0, width, height)
+
+          // Convert to compressed JPEG
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', quality)
+          
+          console.log('Image compressed successfully:', {
+            newWidth: width,
+            newHeight: height,
+            originalSize: file.size,
+            compressedSize: compressedDataUrl.length,
+            compressionRatio: ((file.size - compressedDataUrl.length) / file.size * 100).toFixed(1) + '%'
+          })
+
+          // Clean up
+          URL.revokeObjectURL(img.src)
+          resolve(compressedDataUrl)
+        } catch (error) {
+          console.error('Error during compression:', error)
+          reject(new Error('Erro ao comprimir a imagem'))
+        }
       }
       
-      img.onerror = reject
-      img.src = URL.createObjectURL(file)
+      img.onerror = (error) => {
+        console.error('Error loading image:', error)
+        URL.revokeObjectURL(img.src)
+        reject(new Error('Erro ao carregar a imagem'))
+      }
+
+      // Create object URL and load image
+      try {
+        img.src = URL.createObjectURL(file)
+      } catch (error) {
+        console.error('Error creating object URL:', error)
+        reject(new Error('Erro ao processar o arquivo'))
+      }
     })
   }
 
@@ -174,53 +242,102 @@ export default function PainelAdministrativoPage() {
     type: "product" | "catalog" | "product-multiple",
   ) => {
     const files = e.target.files
-    if (files) {
-      if (type === "product-multiple") {
-        // For multiple images, compress and add to images array
-        for (const file of Array.from(files)) {
-          // Check file size (limit to 5MB before compression)
-          if (file.size > 5 * 1024 * 1024) {
-            alert(`Arquivo ${file.name} é muito grande. Limite: 5MB por imagem.`)
-            continue
-          }
+    if (!files || files.length === 0) {
+      return
+    }
 
-          try {
-            const compressedImage = await compressImage(file, 600, 0.6)
-            setProductForm((prev) => ({
-              ...prev,
-              images: [...prev.images, compressedImage],
-              mainImage: prev.mainImage || compressedImage,
-            }))
-          } catch (error) {
-            alert(`Erro ao processar a imagem ${file.name}`)
-          }
+    console.log('Starting image upload process:', {
+      type,
+      fileCount: files.length,
+      files: Array.from(files).map(f => ({ name: f.name, size: f.size, type: f.type }))
+    })
+
+    if (type === "product-multiple") {
+      // For multiple images, compress and add to images array
+      let successCount = 0
+      let errorCount = 0
+
+      for (const file of Array.from(files)) {
+        console.log(`Processing file: ${file.name}`)
+
+        // Check file size (limit to 10MB before compression)
+        if (file.size > 10 * 1024 * 1024) {
+          alert(`❌ Arquivo ${file.name} é muito grande. Limite: 10MB por imagem.`)
+          errorCount++
+          continue
         }
-      } else {
-        const file = files[0]
 
-        // Check file size (limit to 5MB before compression)
-        if (file.size > 5 * 1024 * 1024) {
-          alert("Arquivo muito grande. Limite: 5MB por imagem.")
-          return
+        // Check file type
+        if (!file.type.startsWith('image/')) {
+          alert(`❌ ${file.name} não é uma imagem válida.`)
+          errorCount++
+          continue
         }
 
         try {
-          const compressedImage = await compressImage(file, 600, 0.6)
+          console.log(`Compressing ${file.name}...`)
+          const compressedImage = await compressImage(file, 400, 0.5)
           
-          if (type === "product") {
-            setProductForm((prev) => ({
-              ...prev,
-              mainImage: compressedImage,
-              images: prev.images.length > 0 ? [compressedImage, ...prev.images.slice(1)] : [compressedImage],
-            }))
-          } else if (type === "catalog") {
-            setCatalogForm({ ...catalogForm, image: compressedImage })
-          }
+          setProductForm((prev) => ({
+            ...prev,
+            images: [...prev.images, compressedImage],
+            mainImage: prev.mainImage || compressedImage,
+          }))
+          
+          successCount++
+          console.log(`✅ ${file.name} processed successfully`)
         } catch (error) {
-          alert("Erro ao processar a imagem")
+          console.error(`❌ Error processing ${file.name}:`, error)
+          alert(`❌ Erro ao processar ${file.name}: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
+          errorCount++
         }
       }
+
+      // Show summary
+      if (successCount > 0) {
+        alert(`✅ ${successCount} imagem(ns) adicionada(s) com sucesso!${errorCount > 0 ? ` (${errorCount} falharam)` : ''}`)
+      }
+    } else {
+      // Single image upload
+      const file = files[0]
+      console.log(`Processing single file: ${file.name}`)
+
+      // Check file size (limit to 10MB before compression)
+      if (file.size > 10 * 1024 * 1024) {
+        alert("❌ Arquivo muito grande. Limite: 10MB por imagem.")
+        return
+      }
+
+      // Check file type
+      if (!file.type.startsWith('image/')) {
+        alert("❌ Arquivo deve ser uma imagem válida.")
+        return
+      }
+
+      try {
+        console.log(`Compressing ${file.name}...`)
+        const compressedImage = await compressImage(file, 400, 0.5)
+        
+        if (type === "product") {
+          setProductForm((prev) => ({
+            ...prev,
+            mainImage: compressedImage,
+            images: prev.images.length > 0 ? [compressedImage, ...prev.images.slice(1)] : [compressedImage],
+          }))
+        } else if (type === "catalog") {
+          setCatalogForm({ ...catalogForm, image: compressedImage })
+        }
+        
+        console.log(`✅ ${file.name} processed successfully`)
+        alert(`✅ Imagem ${file.name} adicionada com sucesso!`)
+      } catch (error) {
+        console.error(`❌ Error processing ${file.name}:`, error)
+        alert(`❌ Erro ao processar a imagem: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
+      }
     }
+
+    // Clear the input to allow re-uploading the same file
+    e.target.value = ''
   }
 
   const removeProductImage = (index: number) => {
@@ -680,7 +797,7 @@ ${imageMessage}
                               <Upload className="w-4 h-4 text-gray-400" />
                             </div>
                             <div className="text-sm text-gray-600">
-                              Selecione múltiplas imagens (máximo 2MB cada). A primeira será a imagem principal.
+                              Selecione múltiplas imagens (máximo 10MB cada). Serão comprimidas automaticamente para otimizar o carregamento.
                             </div>
                             {productForm.images.length > 0 && (
                               <div className="space-y-2">
