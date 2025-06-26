@@ -1010,7 +1010,7 @@ ${imageMessage}
                               />
                               <Upload className="w-4 h-4 text-gray-400" />
                             </div>
-                            <div className="text-sm text-gray-600 mt-1">Selecione uma imagem (máximo 2MB)</div>
+                            <div className="text-sm text-gray-600 mt-1">Selecione uma imagem (máximo 10MB) - será comprimida automaticamente</div>
                             {catalogForm.image && (
                               <div className="mt-2 relative inline-block">
                                 <div className="w-20 h-20 border rounded overflow-hidden">
@@ -1592,7 +1592,7 @@ ${imageMessage}
                   <Upload className="w-4 h-4 text-gray-400" />
                 </div>
                 <div className="text-sm text-gray-600 mt-1">
-                  Adicione mais imagens ou substitua as existentes (máximo 2MB cada)
+                  Adicione mais imagens ou substitua as existentes (máximo 10MB cada) - serão comprimidas automaticamente
                 </div>
                 {productForm.images.length > 0 && (
                   <div className="space-y-2 mt-2">
@@ -1711,7 +1711,7 @@ ${imageMessage}
                   />
                   <Upload className="w-4 h-4 text-gray-400" />
                 </div>
-                <div className="text-sm text-gray-600 mt-1">Selecione uma nova imagem (máximo 2MB)</div>
+                <div className="text-sm text-gray-600 mt-1">Selecione uma nova imagem (máximo 10MB) - será comprimida automaticamente</div>
                 {catalogForm.image && (
                   <div className="mt-2 relative inline-block">
                     <div className="w-20 h-20 border rounded overflow-hidden">
