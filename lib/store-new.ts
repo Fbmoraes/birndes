@@ -92,6 +92,10 @@ async function apiCall(endpoint: string, options: RequestInit = {}) {
   })
   
   if (!response.ok) {
+    if (response.status === 401) {
+      // Handle unauthorized access
+      throw new Error('Unauthorized - please login again')
+    }
     throw new Error(`API call failed: ${response.statusText}`)
   }
   
@@ -172,6 +176,9 @@ export const useStore = create<Store>()(
           set({ products: data.data.products })
         } catch (error) {
           console.error('Failed to add product:', error)
+          if (error instanceof Error && error.message.includes('Unauthorized')) {
+            set({ isAuthenticated: false })
+          }
           throw error
         }
       },

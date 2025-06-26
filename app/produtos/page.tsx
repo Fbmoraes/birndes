@@ -9,7 +9,7 @@ import Image from "next/image"
 import { useState } from "react"
 import Header from "@/components/header"
 import ShoppingCartComponent from "@/components/shopping-cart"
-import { useStore, type Product } from "@/lib/store"
+import { useStore, type Product } from "@/lib/store-new"
 
 interface ProductCardProps {
   product: Product

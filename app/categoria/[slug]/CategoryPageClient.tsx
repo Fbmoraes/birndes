@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { ShoppingCart, Facebook, Instagram, MessageCircle, ArrowLeft } from "lucide-react"
 import Image from "next/image"
-import { useStore } from "@/lib/store"
+import { useStore } from "@/lib/store-new"
 
 export default function CategoryPageClient({ params }: { params: { slug: string } }) {
   const slug = params.slug as string

@@ -7,7 +7,7 @@ import Image from "next/image"
 import { useState } from "react"
 import ShoppingCartComponent from "@/components/shopping-cart"
 import Header from "@/components/header"
-import { useStore } from "@/lib/store"
+import { useStore } from "@/lib/store-new"
 
 export default function HomePage() {
   const [isCartOpen, setIsCartOpen] = useState(false)

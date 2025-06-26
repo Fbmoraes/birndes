@@ -18,7 +18,7 @@ import {
 import Image from "next/image"
 import { useState } from "react"
 import { useParams } from "next/navigation"
-import { useStore } from "@/lib/store"
+import { useStore } from "@/lib/store-new"
 
 export default function ProductPageClient() {
   const params = useParams()
