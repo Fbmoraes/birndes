@@ -55,6 +55,9 @@ interface Store {
   isLoading: boolean
   syncStatus: 'idle' | 'syncing' | 'success' | 'error'
   syncMessage: string
+  lastSyncTime: number
+  dataVersion: number
+  isSyncing: boolean
 
   // API Actions
   fetchData: () => Promise<void>
@@ -152,23 +155,54 @@ export const useStore = create<Store>()(
       isLoading: false,
       syncStatus: 'idle',
       syncMessage: '',
+      lastSyncTime: 0,
+      dataVersion: 0,
+      isSyncing: false,
 
-      // Universal fetch data with aggressive cache busting for all devices
+      // Controlled fetch data with concurrency protection
       fetchData: async () => {
         const currentState = get()
         
+        // Prevent concurrent syncs
+        if (currentState.isSyncing) {
+          console.log('Sync already in progress, skipping...')
+          return
+        }
+        
+        // Throttle syncs (minimum 2 seconds between syncs)
+        const now = Date.now()
+        if (now - currentState.lastSyncTime < 2000) {
+          console.log('Sync throttled, too soon since last sync')
+          return
+        }
+        
         try {
-          set({ isLoading: true, syncStatus: 'syncing', syncMessage: 'Sincronizando dados...' })
+          set({ 
+            isLoading: true, 
+            isSyncing: true,
+            syncStatus: 'syncing', 
+            syncMessage: 'Sincronizando dados...',
+            lastSyncTime: now
+          })
+          
+          // Clear server cache first to ensure fresh data
+          await fetch('/api/debug', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'clearCache' })
+          }).catch(() => {}) // Ignore errors
+          
+          // Wait a bit for cache to clear
+          await new Promise(resolve => setTimeout(resolve, 100))
           
           // Universal cache-busting strategy
           const timestamp = Date.now()
           const random = Math.random().toString(36).substring(7)
           const sessionId = Math.random().toString(36).substring(2, 15)
           
-          // Always use aggressive cache busting for all devices
-          const url = `/api/store?t=${timestamp}&r=${random}&s=${sessionId}&v=${Date.now()}`
+          const url = `/api/store?t=${timestamp}&r=${random}&s=${sessionId}&v=${Date.now()}&clear=1`
           
-          console.log('Universal fetch from:', url)
+          console.log('Controlled fetch from:', url)
           
           const response = await fetch(url, {
             method: 'GET',
@@ -180,7 +214,7 @@ export const useStore = create<Store>()(
               'X-Cache-Bust': timestamp.toString(),
               'X-Session-Id': sessionId,
               'X-Force-Refresh': '1',
-              'X-Universal-Sync': '1'
+              'X-Clear-Cache': '1'
             }
           })
           
@@ -189,6 +223,19 @@ export const useStore = create<Store>()(
           }
           
           const data = await response.json()
+          
+          // Validate data version to prevent stale data
+          const serverVersion = data.version || 0
+          if (serverVersion < currentState.dataVersion && currentState.dataVersion > 0) {
+            console.warn('Server data is older than local data, skipping update')
+            set({ 
+              isLoading: false, 
+              isSyncing: false,
+              syncStatus: 'error',
+              syncMessage: '⚠️ Dados desatualizados no servidor'
+            })
+            return
+          }
           
           // Ensure we have valid data structure
           const validData = {
@@ -200,15 +247,18 @@ export const useStore = create<Store>()(
           set({
             ...validData,
             isLoading: false,
+            isSyncing: false,
             syncStatus: 'success',
-            syncMessage: `✅ Sincronizado! ${validData.products.length} produtos`
+            syncMessage: `✅ Sincronizado! ${validData.products.length} produtos`,
+            dataVersion: serverVersion,
+            lastSyncTime: Date.now()
           })
           
-          console.log('Universal sync successful:', {
+          console.log('Controlled sync successful:', {
             productsCount: validData.products.length,
             catalogItemsCount: validData.catalogItems.length,
-            version: data.version,
-            lastUpdated: data.lastUpdated,
+            serverVersion,
+            localVersion: currentState.dataVersion,
             timestamp: new Date().toISOString()
           })
           
@@ -218,9 +268,10 @@ export const useStore = create<Store>()(
           }, 2000)
           
         } catch (error) {
-          console.error('Universal sync failed:', error)
+          console.error('Controlled sync failed:', error)
           set({ 
             isLoading: false,
+            isSyncing: false,
             syncStatus: 'error',
             syncMessage: '❌ Erro na sincronização'
           })
@@ -274,22 +325,20 @@ export const useStore = create<Store>()(
             console.log('Product added successfully:', {
               productsCount: data.data.products?.length || 0,
               newProduct: product.name,
+              serverVersion: data.data.version,
               timestamp: new Date().toISOString()
             })
             
-            // Immediate sync across all devices
-            setTimeout(() => {
-              get().fetchData()
-            }, 500)
+            // Update data version to prevent conflicts
+            set({ dataVersion: data.data.version || Date.now() })
             
-            // Additional syncs to ensure all devices get the update
+            // Single delayed sync to propagate changes
             setTimeout(() => {
-              get().fetchData()
-            }, 2000)
-            
-            setTimeout(() => {
-              get().fetchData()
-            }, 5000)
+              const currentState = get()
+              if (!currentState.isSyncing) {
+                get().fetchData()
+              }
+            }, 3000) // Wait 3 seconds before syncing
             
             // Reset sync status after showing success
             setTimeout(() => {

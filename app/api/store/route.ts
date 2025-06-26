@@ -16,11 +16,13 @@ export async function GET(request: NextRequest) {
     console.log('GET /api/store - Fetching data')
     const data = await Database.read()
     
-    // Add version timestamp to help with cache busting
+    // Add version timestamp and operation info
     const dataWithVersion = {
       ...data,
       version: Date.now(),
-      lastUpdated: new Date().toISOString()
+      lastUpdated: new Date().toISOString(),
+      operation: 'read',
+      serverTime: Date.now()
     }
     
     console.log('GET /api/store - Data fetched successfully:', {
@@ -134,8 +136,19 @@ export async function POST(request: NextRequest) {
     await Database.write(data)
     console.log('POST /api/store - Database write successful, total products:', data.products?.length || 0)
     
+    // Add version info to response
+    const responseData = {
+      success: true,
+      data: {
+        ...data,
+        version: Date.now(),
+        lastUpdated: new Date().toISOString(),
+        operation: type === 'products' ? 'product_added' : 'catalog_added'
+      }
+    }
+    
     // Add headers to prevent caching
-    const response = NextResponse.json({ success: true, data })
+    const response = NextResponse.json(responseData)
     response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate')
     response.headers.set('Pragma', 'no-cache')
     response.headers.set('Expires', '0')

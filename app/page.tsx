@@ -13,14 +13,14 @@ export default function HomePage() {
   const [isCartOpen, setIsCartOpen] = useState(false)
   const { catalogItems, settings, fetchData } = useStore()
 
-  // Universal auto-sync - frequent updates for all devices
+  // Controlled auto-sync - less frequent to avoid conflicts
   useEffect(() => {
-    console.log('Setting up universal auto-sync every 10 seconds')
+    console.log('Setting up controlled auto-sync every 30 seconds')
     
     const interval = setInterval(() => {
-      console.log('Auto-syncing data universally...')
+      console.log('Auto-syncing data (controlled)...')
       fetchData().catch(console.error)
-    }, 10000) // 10 seconds for all devices
+    }, 30000) // 30 seconds to avoid conflicts
 
     return () => clearInterval(interval)
   }, [fetchData])
