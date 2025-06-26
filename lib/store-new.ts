@@ -153,38 +153,34 @@ export const useStore = create<Store>()(
       syncStatus: 'idle',
       syncMessage: '',
 
-      // Fetch data from API
+      // Universal fetch data with aggressive cache busting for all devices
       fetchData: async () => {
         const currentState = get()
         
         try {
-          set({ isLoading: true, syncStatus: 'syncing', syncMessage: 'Carregando dados...' })
+          set({ isLoading: true, syncStatus: 'syncing', syncMessage: 'Sincronizando dados...' })
           
-          // Add multiple cache-busting parameters for mobile devices
+          // Universal cache-busting strategy
           const timestamp = Date.now()
           const random = Math.random().toString(36).substring(7)
-          const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : 'server'
-          const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent)
+          const sessionId = Math.random().toString(36).substring(2, 15)
           
-          // Use mobile-specific endpoint for mobile devices to force cache refresh
-          const url = isMobile 
-            ? `/api/store/mobile-refresh?t=${timestamp}&r=${random}`
-            : `/api/store?t=${timestamp}&r=${random}&mobile=0`
+          // Always use aggressive cache busting for all devices
+          const url = `/api/store?t=${timestamp}&r=${random}&s=${sessionId}&v=${Date.now()}`
           
-          console.log('Fetching data from:', url, { isMobile })
+          console.log('Universal fetch from:', url)
           
           const response = await fetch(url, {
             method: 'GET',
             headers: {
-              'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
+              'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0, s-maxage=0',
               'Pragma': 'no-cache',
               'Expires': '0',
               'X-Requested-With': 'XMLHttpRequest',
               'X-Cache-Bust': timestamp.toString(),
-              ...(isMobile && {
-                'X-Mobile-Request': '1',
-                'X-Force-Refresh': '1'
-              })
+              'X-Session-Id': sessionId,
+              'X-Force-Refresh': '1',
+              'X-Universal-Sync': '1'
             }
           })
           
@@ -205,16 +201,14 @@ export const useStore = create<Store>()(
             ...validData,
             isLoading: false,
             syncStatus: 'success',
-            syncMessage: `Dados atualizados! ${validData.products.length} produtos carregados`
+            syncMessage: `✅ Sincronizado! ${validData.products.length} produtos`
           })
           
-          console.log('Data fetched successfully:', {
+          console.log('Universal sync successful:', {
             productsCount: validData.products.length,
             catalogItemsCount: validData.catalogItems.length,
-            hasSettings: !!validData.settings,
             version: data.version,
             lastUpdated: data.lastUpdated,
-            isMobile,
             timestamp: new Date().toISOString()
           })
           
@@ -224,12 +218,11 @@ export const useStore = create<Store>()(
           }, 2000)
           
         } catch (error) {
-          console.error('Failed to fetch data:', error)
-          // Always ensure isLoading is set to false
+          console.error('Universal sync failed:', error)
           set({ 
             isLoading: false,
             syncStatus: 'error',
-            syncMessage: 'Erro ao carregar dados'
+            syncMessage: '❌ Erro na sincronização'
           })
           
           // Reset sync status after showing error
@@ -238,7 +231,7 @@ export const useStore = create<Store>()(
           }, 3000)
           
           // Don't throw error to prevent initialization from failing
-          console.warn('Using existing data due to fetch error')
+          console.warn('Using existing data due to sync error')
         }
       },
 
@@ -284,10 +277,19 @@ export const useStore = create<Store>()(
               timestamp: new Date().toISOString()
             })
             
-            // Force a fresh data fetch to ensure synchronization
+            // Immediate sync across all devices
             setTimeout(() => {
               get().fetchData()
-            }, 1000)
+            }, 500)
+            
+            // Additional syncs to ensure all devices get the update
+            setTimeout(() => {
+              get().fetchData()
+            }, 2000)
+            
+            setTimeout(() => {
+              get().fetchData()
+            }, 5000)
             
             // Reset sync status after showing success
             setTimeout(() => {

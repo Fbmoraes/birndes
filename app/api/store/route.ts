@@ -65,8 +65,24 @@ export async function POST(request: NextRequest) {
 
     console.log('POST /api/store - Authentication successful')
 
-    const body = await request.json()
-    console.log('POST /api/store - Request body:', { type: body.type, itemName: body.item?.name })
+    const bodyText = await request.text()
+    
+    // Check payload size (limit to 1MB to avoid 413 errors)
+    if (bodyText.length > 1024 * 1024) {
+      console.error('POST /api/store - Payload too large:', bodyText.length, 'bytes')
+      return NextResponse.json({ 
+        error: 'Payload too large. Please reduce image sizes.',
+        size: bodyText.length,
+        limit: 1024 * 1024
+      }, { status: 413 })
+    }
+    
+    const body = JSON.parse(bodyText)
+    console.log('POST /api/store - Request body:', { 
+      type: body.type, 
+      itemName: body.item?.name,
+      payloadSize: bodyText.length 
+    })
     
     const { type, item } = body // type: 'products' | 'catalogItems' | 'settings'
     

@@ -13,19 +13,40 @@ export default function HomePage() {
   const [isCartOpen, setIsCartOpen] = useState(false)
   const { catalogItems, settings, fetchData } = useStore()
 
-  // Auto-refresh data - more frequent on mobile devices
+  // Universal auto-sync - frequent updates for all devices
   useEffect(() => {
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-    const refreshInterval = isMobile ? 15000 : 30000 // 15s for mobile, 30s for desktop
-    
-    console.log('Setting up auto-refresh:', { isMobile, interval: refreshInterval })
+    console.log('Setting up universal auto-sync every 10 seconds')
     
     const interval = setInterval(() => {
-      console.log('Auto-refreshing data...')
+      console.log('Auto-syncing data universally...')
       fetchData().catch(console.error)
-    }, refreshInterval)
+    }, 10000) // 10 seconds for all devices
 
     return () => clearInterval(interval)
+  }, [fetchData])
+
+  // Additional sync on page focus (when user returns to tab)
+  useEffect(() => {
+    const handleFocus = () => {
+      console.log('Page focused - syncing data...')
+      fetchData().catch(console.error)
+    }
+
+    window.addEventListener('focus', handleFocus)
+    return () => window.removeEventListener('focus', handleFocus)
+  }, [fetchData])
+
+  // Sync on page visibility change
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        console.log('Page visible - syncing data...')
+        fetchData().catch(console.error)
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
   }, [fetchData])
 
   const handleContactClick = () => {

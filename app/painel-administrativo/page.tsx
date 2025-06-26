@@ -145,62 +145,80 @@ export default function PainelAdministrativoPage() {
     })
   }
 
-  // Enhanced image handling with FileReader and base64 conversion
-  const handleImageUpload = (
+  // Optimized image handling with size compression
+  const compressImage = (file: File, maxWidth: number = 800, quality: number = 0.7): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+      const img = new Image()
+      
+      img.onload = () => {
+        // Calculate new dimensions
+        const ratio = Math.min(maxWidth / img.width, maxWidth / img.height)
+        canvas.width = img.width * ratio
+        canvas.height = img.height * ratio
+        
+        // Draw and compress
+        ctx?.drawImage(img, 0, 0, canvas.width, canvas.height)
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', quality)
+        resolve(compressedDataUrl)
+      }
+      
+      img.onerror = reject
+      img.src = URL.createObjectURL(file)
+    })
+  }
+
+  const handleImageUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
     type: "product" | "catalog" | "product-multiple",
   ) => {
     const files = e.target.files
     if (files) {
       if (type === "product-multiple") {
-        // For multiple images, convert to base64 and add to images array
-        Array.from(files).forEach((file) => {
-          // Check file size (limit to 2MB per image)
-          if (file.size > 2 * 1024 * 1024) {
-            alert(`Arquivo ${file.name} é muito grande. Limite: 2MB por imagem.`)
-            return
+        // For multiple images, compress and add to images array
+        for (const file of Array.from(files)) {
+          // Check file size (limit to 5MB before compression)
+          if (file.size > 5 * 1024 * 1024) {
+            alert(`Arquivo ${file.name} é muito grande. Limite: 5MB por imagem.`)
+            continue
           }
 
-          const reader = new FileReader()
-          reader.onload = (event) => {
-            const result = event.target?.result as string
+          try {
+            const compressedImage = await compressImage(file, 600, 0.6)
             setProductForm((prev) => ({
               ...prev,
-              images: [...prev.images, result],
-              mainImage: prev.mainImage || result,
+              images: [...prev.images, compressedImage],
+              mainImage: prev.mainImage || compressedImage,
             }))
+          } catch (error) {
+            alert(`Erro ao processar a imagem ${file.name}`)
           }
-          reader.onerror = () => {
-            alert(`Erro ao carregar a imagem ${file.name}`)
-          }
-          reader.readAsDataURL(file)
-        })
+        }
       } else {
         const file = files[0]
 
-        // Check file size (limit to 2MB)
-        if (file.size > 2 * 1024 * 1024) {
-          alert("Arquivo muito grande. Limite: 2MB por imagem.")
+        // Check file size (limit to 5MB before compression)
+        if (file.size > 5 * 1024 * 1024) {
+          alert("Arquivo muito grande. Limite: 5MB por imagem.")
           return
         }
 
-        const reader = new FileReader()
-        reader.onload = (event) => {
-          const result = event.target?.result as string
+        try {
+          const compressedImage = await compressImage(file, 600, 0.6)
+          
           if (type === "product") {
             setProductForm((prev) => ({
               ...prev,
-              mainImage: result,
-              images: prev.images.length > 0 ? [result, ...prev.images.slice(1)] : [result],
+              mainImage: compressedImage,
+              images: prev.images.length > 0 ? [compressedImage, ...prev.images.slice(1)] : [compressedImage],
             }))
           } else if (type === "catalog") {
-            setCatalogForm({ ...catalogForm, image: result })
+            setCatalogForm({ ...catalogForm, image: compressedImage })
           }
+        } catch (error) {
+          alert("Erro ao processar a imagem")
         }
-        reader.onerror = () => {
-          alert("Erro ao carregar a imagem")
-        }
-        reader.readAsDataURL(file)
       }
     }
   }

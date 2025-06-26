@@ -113,44 +113,42 @@ function ProductCard({ product, onAddToCart }: ProductCardProps) {
 
 export default function ProdutosPage() {
   const [isCartOpen, setIsCartOpen] = useState(false)
-  const [isRefreshing, setIsRefreshing] = useState(false)
-  const [isMobile, setIsMobile] = useState(false)
   const { products, addToCart, settings, cartItems, fetchData } = useStore()
 
-  // Detect mobile device
+  // Universal auto-sync - frequent updates for all devices
   useEffect(() => {
-    const checkMobile = () => {
-      const mobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-      setIsMobile(mobile)
-    }
-    checkMobile()
-  }, [])
-
-  // Manual refresh function
-  const handleManualRefresh = async () => {
-    setIsRefreshing(true)
-    try {
-      await fetchData()
-    } catch (error) {
-      console.error('Manual refresh failed:', error)
-    } finally {
-      setIsRefreshing(false)
-    }
-  }
-
-  // Auto-refresh data - more frequent on mobile devices
-  useEffect(() => {
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-    const refreshInterval = isMobile ? 15000 : 30000 // 15s for mobile, 30s for desktop
-    
-    console.log('Setting up auto-refresh:', { isMobile, interval: refreshInterval })
+    console.log('Setting up universal auto-sync every 10 seconds')
     
     const interval = setInterval(() => {
-      console.log('Auto-refreshing data...')
+      console.log('Auto-syncing data universally...')
       fetchData().catch(console.error)
-    }, refreshInterval)
+    }, 10000) // 10 seconds for all devices
 
     return () => clearInterval(interval)
+  }, [fetchData])
+
+  // Additional sync on page focus (when user returns to tab)
+  useEffect(() => {
+    const handleFocus = () => {
+      console.log('Page focused - syncing data...')
+      fetchData().catch(console.error)
+    }
+
+    window.addEventListener('focus', handleFocus)
+    return () => window.removeEventListener('focus', handleFocus)
+  }, [fetchData])
+
+  // Sync on page visibility change
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        console.log('Page visible - syncing data...')
+        fetchData().catch(console.error)
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
   }, [fetchData])
 
   const handleContactClick = () => {
@@ -173,28 +171,13 @@ export default function ProdutosPage() {
       <section className="py-16 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
-            <div className="flex items-center justify-center gap-4 mb-4">
-              <h1 className="text-4xl font-bold text-pink-500">Nossos Produtos</h1>
-              {isMobile && (
-                <Button
-                  onClick={handleManualRefresh}
-                  disabled={isRefreshing}
-                  variant="outline"
-                  size="sm"
-                  className="text-pink-500 border-pink-500 hover:bg-pink-50"
-                >
-                  <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                </Button>
-              )}
-            </div>
+            <h1 className="text-4xl font-bold text-pink-500 mb-4">Nossos Produtos</h1>
             <p className="text-gray-600 text-lg max-w-2xl mx-auto">
               Descubra nossa coleção de produtos personalizados para tornar seus momentos ainda mais especiais!
             </p>
-            {isMobile && (
-              <p className="text-sm text-gray-500 mt-2">
-                📱 Toque no botão de atualizar se não vir os produtos mais recentes
-              </p>
-            )}
+            <p className="text-sm text-gray-500 mt-2">
+              🔄 Sincronização automática ativa - produtos atualizados em tempo real
+            </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8 mb-16">
