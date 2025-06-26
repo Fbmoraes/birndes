@@ -53,6 +53,8 @@ interface Store {
   cartItems: CartItem[]
   isAuthenticated: boolean
   isLoading: boolean
+  syncStatus: 'idle' | 'syncing' | 'success' | 'error'
+  syncMessage: string
 
   // API Actions
   fetchData: () => Promise<void>
@@ -148,6 +150,8 @@ export const useStore = create<Store>()(
       cartItems: [],
       isAuthenticated: false,
       isLoading: false,
+      syncStatus: 'idle',
+      syncMessage: '',
 
       // Fetch data from API
       fetchData: async () => {
@@ -155,7 +159,23 @@ export const useStore = create<Store>()(
         
         try {
           set({ isLoading: true })
-          const data = await apiCall('store')
+          
+          // Add cache-busting parameter to ensure fresh data
+          const timestamp = Date.now()
+          const response = await fetch(`/api/store?t=${timestamp}`, {
+            method: 'GET',
+            headers: {
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+              'Pragma': 'no-cache',
+              'Expires': '0'
+            }
+          })
+          
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`)
+          }
+          
+          const data = await response.json()
           
           // Ensure we have valid data structure
           const validData = {
@@ -172,7 +192,8 @@ export const useStore = create<Store>()(
           console.log('Data fetched successfully:', {
             productsCount: validData.products.length,
             catalogItemsCount: validData.catalogItems.length,
-            hasSettings: !!validData.settings
+            hasSettings: !!validData.settings,
+            timestamp: new Date().toISOString()
           })
         } catch (error) {
           console.error('Failed to fetch data:', error)
@@ -186,10 +207,28 @@ export const useStore = create<Store>()(
       // Product actions
       addProduct: async (product) => {
         try {
-          const data = await apiCall('store', {
+          console.log('Adding product:', product.name)
+          set({ syncStatus: 'syncing', syncMessage: `Adicionando produto "${product.name}"...` })
+          
+          const response = await fetch('/api/store', {
             method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Cache-Control': 'no-cache'
+            },
             body: JSON.stringify({ type: 'products', item: product }),
           })
+          
+          if (!response.ok) {
+            if (response.status === 401) {
+              set({ isAuthenticated: false, syncStatus: 'error', syncMessage: 'Não autorizado - faça login novamente' })
+              throw new Error('Unauthorized - please login again')
+            }
+            set({ syncStatus: 'error', syncMessage: 'Erro ao adicionar produto' })
+            throw new Error(`Failed to add product: ${response.statusText}`)
+          }
+          
+          const data = await response.json()
           
           // Update all data from response
           if (data.data) {
@@ -197,18 +236,38 @@ export const useStore = create<Store>()(
               products: Array.isArray(data.data.products) ? data.data.products : get().products,
               catalogItems: Array.isArray(data.data.catalogItems) ? data.data.catalogItems : get().catalogItems,
               settings: data.data.settings || get().settings,
+              syncStatus: 'success',
+              syncMessage: `Produto "${product.name}" adicionado com sucesso!`
             })
             
             console.log('Product added successfully:', {
               productsCount: data.data.products?.length || 0,
-              newProduct: product.name
+              newProduct: product.name,
+              timestamp: new Date().toISOString()
             })
+            
+            // Force a fresh data fetch to ensure synchronization
+            setTimeout(() => {
+              get().fetchData()
+            }, 1000)
+            
+            // Reset sync status after showing success
+            setTimeout(() => {
+              set({ syncStatus: 'idle', syncMessage: '' })
+            }, 3000)
           }
         } catch (error) {
           console.error('Failed to add product:', error)
+          set({ syncStatus: 'error', syncMessage: 'Erro ao adicionar produto' })
           if (error instanceof Error && error.message.includes('Unauthorized')) {
             set({ isAuthenticated: false })
           }
+          
+          // Reset sync status after showing error
+          setTimeout(() => {
+            set({ syncStatus: 'idle', syncMessage: '' })
+          }, 5000)
+          
           throw error
         }
       },

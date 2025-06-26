@@ -14,7 +14,14 @@ function checkAuth(request: NextRequest) {
 export async function GET() {
   try {
     const data = await Database.read()
-    return NextResponse.json(data)
+    
+    // Add headers to prevent caching
+    const response = NextResponse.json(data)
+    response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate')
+    response.headers.set('Pragma', 'no-cache')
+    response.headers.set('Expires', '0')
+    
+    return response
   } catch (error) {
     console.error('Failed to fetch data:', error)
     return NextResponse.json({ error: 'Failed to fetch data' }, { status: 500 })

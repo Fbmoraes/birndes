@@ -44,10 +44,11 @@ import Image from "next/image"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useStore, type Product, type CatalogItem } from "@/lib/store-new"
+import { SyncIndicator } from "@/components/sync-indicator"
 
 export default function PainelAdministrativoPage() {
   const router = useRouter()
-  const { products, catalogItems, addProduct, updateProduct, deleteProduct, addCatalogItem, updateCatalogItem, deleteCatalogItem, isAuthenticated, logout, settings, updateSettings } = useStore()
+  const { products, catalogItems, addProduct, updateProduct, deleteProduct, addCatalogItem, updateCatalogItem, deleteCatalogItem, isAuthenticated, logout, settings, updateSettings, syncStatus, syncMessage } = useStore()
 
   const [activeTab, setActiveTab] = useState<"products" | "catalog" | "seo" | "settings">("products")
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
@@ -223,7 +224,7 @@ export default function PainelAdministrativoPage() {
     }))
   }
 
-  const handleAddProduct = (e: React.FormEvent) => {
+  const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault()
 
     try {
@@ -266,7 +267,9 @@ export default function PainelAdministrativoPage() {
         productionTime: productForm.productionTime.trim() || "3-7 dias úteis",
       }
 
-      addProduct(newProduct)
+      console.log('Attempting to add product:', newProduct.name)
+      
+      await addProduct(newProduct)
 
       // Generate slug for success message
       const slug =
@@ -292,14 +295,16 @@ export default function PainelAdministrativoPage() {
 
 ${imageMessage}
 
-🔗 Você pode acessar a página do produto através do link "Ver Detalhes" na lista de produtos.`,
+🔗 Você pode acessar a página do produto através do link "Ver Detalhes" na lista de produtos.
+
+📱 Os dados serão sincronizados automaticamente em todos os dispositivos em até 30 segundos.`,
       )
 
       resetProductForm()
       setIsAddDialogOpen(false)
     } catch (error) {
       console.error("Error adding product:", error)
-      alert("❌ Erro ao adicionar produto. Tente novamente.")
+      alert(`❌ Erro ao adicionar produto: ${error instanceof Error ? error.message : 'Erro desconhecido'}. Tente novamente.`)
     }
   }
 
@@ -438,6 +443,12 @@ ${imageMessage}
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-pink-50 to-white">
+      {/* Sync Indicator */}
+      <SyncIndicator 
+        isVisible={syncStatus !== 'idle'} 
+        status={syncStatus === 'syncing' ? 'syncing' : syncStatus === 'success' ? 'success' : 'error'}
+        message={syncMessage}
+      />
       {/* Header */}
       <header className="bg-white border-b border-gray-200 px-4 py-3">
         <div className="max-w-7xl mx-auto flex items-center justify-between">

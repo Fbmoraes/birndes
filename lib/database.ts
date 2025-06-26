@@ -99,7 +99,7 @@ const KV_KEY = 'printsbrindes_data'
 // Global cache for serverless functions
 let globalCache: DatabaseData | null = null
 let cacheTimestamp = 0
-const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
+const CACHE_DURATION = 30 * 1000 // 30 seconds - reduced for better sync
 
 // Check if we're in production with KV available
 const isKVAvailable = () => {

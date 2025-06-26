@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Facebook, Instagram, MessageCircle, Minus, Plus, ShoppingCart } from "lucide-react"
 import Image from "next/image"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Header from "@/components/header"
 import ShoppingCartComponent from "@/components/shopping-cart"
 import { useStore, type Product } from "@/lib/store-new"
@@ -113,7 +113,16 @@ function ProductCard({ product, onAddToCart }: ProductCardProps) {
 
 export default function ProdutosPage() {
   const [isCartOpen, setIsCartOpen] = useState(false)
-  const { products, addToCart, settings, cartItems } = useStore()
+  const { products, addToCart, settings, cartItems, fetchData } = useStore()
+
+  // Auto-refresh data every 30 seconds to ensure sync across devices
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchData().catch(console.error)
+    }, 30000) // 30 seconds
+
+    return () => clearInterval(interval)
+  }, [fetchData])
 
   const handleContactClick = () => {
     const whatsappNumber = settings.whatsappNumber.replace(/\D/g, "")

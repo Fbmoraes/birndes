@@ -4,14 +4,23 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Heart, Facebook, Instagram, MessageCircle } from "lucide-react"
 import Image from "next/image"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import ShoppingCartComponent from "@/components/shopping-cart"
 import Header from "@/components/header"
 import { useStore } from "@/lib/store-new"
 
 export default function HomePage() {
   const [isCartOpen, setIsCartOpen] = useState(false)
-  const { catalogItems, settings } = useStore()
+  const { catalogItems, settings, fetchData } = useStore()
+
+  // Auto-refresh data every 30 seconds to ensure sync across devices
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchData().catch(console.error)
+    }, 30000) // 30 seconds
+
+    return () => clearInterval(interval)
+  }, [fetchData])
 
   const handleContactClick = () => {
     const whatsappNumber = settings.whatsappNumber.replace(/\D/g, "")
