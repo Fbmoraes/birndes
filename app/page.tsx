@@ -13,11 +13,17 @@ export default function HomePage() {
   const [isCartOpen, setIsCartOpen] = useState(false)
   const { catalogItems, settings, fetchData } = useStore()
 
-  // Auto-refresh data every 30 seconds to ensure sync across devices
+  // Auto-refresh data - more frequent on mobile devices
   useEffect(() => {
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+    const refreshInterval = isMobile ? 15000 : 30000 // 15s for mobile, 30s for desktop
+    
+    console.log('Setting up auto-refresh:', { isMobile, interval: refreshInterval })
+    
     const interval = setInterval(() => {
+      console.log('Auto-refreshing data...')
       fetchData().catch(console.error)
-    }, 30000) // 30 seconds
+    }, refreshInterval)
 
     return () => clearInterval(interval)
   }, [fetchData])

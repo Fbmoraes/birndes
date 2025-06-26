@@ -158,21 +158,38 @@ export const useStore = create<Store>()(
         const currentState = get()
         
         try {
-          set({ isLoading: true })
+          set({ isLoading: true, syncStatus: 'syncing', syncMessage: 'Carregando dados...' })
           
-          // Add cache-busting parameter to ensure fresh data
+          // Add multiple cache-busting parameters for mobile devices
           const timestamp = Date.now()
-          const response = await fetch(`/api/store?t=${timestamp}`, {
+          const random = Math.random().toString(36).substring(7)
+          const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : 'server'
+          const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent)
+          
+          // Use mobile-specific endpoint for mobile devices to force cache refresh
+          const url = isMobile 
+            ? `/api/store/mobile-refresh?t=${timestamp}&r=${random}`
+            : `/api/store?t=${timestamp}&r=${random}&mobile=0`
+          
+          console.log('Fetching data from:', url, { isMobile })
+          
+          const response = await fetch(url, {
             method: 'GET',
             headers: {
-              'Cache-Control': 'no-cache, no-store, must-revalidate',
+              'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
               'Pragma': 'no-cache',
-              'Expires': '0'
+              'Expires': '0',
+              'X-Requested-With': 'XMLHttpRequest',
+              'X-Cache-Bust': timestamp.toString(),
+              ...(isMobile && {
+                'X-Mobile-Request': '1',
+                'X-Force-Refresh': '1'
+              })
             }
           })
           
           if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`)
+            throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`)
           }
           
           const data = await response.json()
@@ -187,18 +204,39 @@ export const useStore = create<Store>()(
           set({
             ...validData,
             isLoading: false,
+            syncStatus: 'success',
+            syncMessage: `Dados atualizados! ${validData.products.length} produtos carregados`
           })
           
           console.log('Data fetched successfully:', {
             productsCount: validData.products.length,
             catalogItemsCount: validData.catalogItems.length,
             hasSettings: !!validData.settings,
+            version: data.version,
+            lastUpdated: data.lastUpdated,
+            isMobile,
             timestamp: new Date().toISOString()
           })
+          
+          // Reset sync status after showing success
+          setTimeout(() => {
+            set({ syncStatus: 'idle', syncMessage: '' })
+          }, 2000)
+          
         } catch (error) {
           console.error('Failed to fetch data:', error)
           // Always ensure isLoading is set to false
-          set({ isLoading: false })
+          set({ 
+            isLoading: false,
+            syncStatus: 'error',
+            syncMessage: 'Erro ao carregar dados'
+          })
+          
+          // Reset sync status after showing error
+          setTimeout(() => {
+            set({ syncStatus: 'idle', syncMessage: '' })
+          }, 3000)
+          
           // Don't throw error to prevent initialization from failing
           console.warn('Using existing data due to fetch error')
         }

@@ -11,37 +11,80 @@ function checkAuth(request: NextRequest) {
 }
 
 // GET - Fetch all data
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    console.log('GET /api/store - Fetching data')
     const data = await Database.read()
     
-    // Add headers to prevent caching
-    const response = NextResponse.json(data)
-    response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate')
+    // Add version timestamp to help with cache busting
+    const dataWithVersion = {
+      ...data,
+      version: Date.now(),
+      lastUpdated: new Date().toISOString()
+    }
+    
+    console.log('GET /api/store - Data fetched successfully:', {
+      productsCount: data.products?.length || 0,
+      catalogItemsCount: data.catalogItems?.length || 0,
+      version: dataWithVersion.version
+    })
+    
+    // Add aggressive headers to prevent caching on mobile devices
+    const response = NextResponse.json(dataWithVersion)
+    response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0')
     response.headers.set('Pragma', 'no-cache')
     response.headers.set('Expires', '0')
+    response.headers.set('Last-Modified', new Date().toUTCString())
+    response.headers.set('ETag', `"${dataWithVersion.version}"`)
+    response.headers.set('Vary', 'Accept-Encoding, User-Agent')
+    
+    // Mobile-specific headers
+    response.headers.set('X-Accel-Expires', '0')
+    response.headers.set('X-Cache-Control', 'no-cache')
     
     return response
   } catch (error) {
-    console.error('Failed to fetch data:', error)
-    return NextResponse.json({ error: 'Failed to fetch data' }, { status: 500 })
+    console.error('GET /api/store - Failed to fetch data:', error)
+    return NextResponse.json({ 
+      error: 'Failed to fetch data',
+      details: process.env.NODE_ENV === 'development' ? error : undefined
+    }, { status: 500 })
   }
 }
 
 // POST - Create new item
 export async function POST(request: NextRequest) {
   try {
+    console.log('POST /api/store - Starting request')
+    
     // Check authentication for write operations
     if (!checkAuth(request)) {
+      console.log('POST /api/store - Authentication failed')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    console.log('POST /api/store - Authentication successful')
+
     const body = await request.json()
+    console.log('POST /api/store - Request body:', { type: body.type, itemName: body.item?.name })
+    
     const { type, item } = body // type: 'products' | 'catalogItems' | 'settings'
     
+    if (!type || !item) {
+      console.error('POST /api/store - Missing type or item in request body')
+      return NextResponse.json({ error: 'Missing type or item in request body' }, { status: 400 })
+    }
+
+    console.log('POST /api/store - Reading database')
     const data = await Database.read()
+    console.log('POST /api/store - Database read successful, current products:', data.products?.length || 0)
     
     if (type === 'products') {
+      if (!item.name || !item.description || !item.price || !item.category) {
+        console.error('POST /api/store - Missing required product fields')
+        return NextResponse.json({ error: 'Missing required product fields' }, { status: 400 })
+      }
+
       const newProduct = {
         ...item,
         id: Date.now(),
@@ -55,20 +98,45 @@ export async function POST(request: NextRequest) {
           .replace(/^-+|-+$/g, "")
           .trim() || `produto-${Date.now()}`,
       }
+      
+      console.log('POST /api/store - Adding new product:', { id: newProduct.id, name: newProduct.name, slug: newProduct.slug })
       data.products.push(newProduct)
+      
     } else if (type === 'catalogItems') {
       const newItem = {
         ...item,
         id: Date.now(),
       }
+      console.log('POST /api/store - Adding new catalog item:', { id: newItem.id, title: newItem.title })
       data.catalogItems.push(newItem)
+    } else {
+      console.error('POST /api/store - Invalid type:', type)
+      return NextResponse.json({ error: 'Invalid type' }, { status: 400 })
     }
     
+    console.log('POST /api/store - Writing to database')
     await Database.write(data)
-    return NextResponse.json({ success: true, data })
+    console.log('POST /api/store - Database write successful, total products:', data.products?.length || 0)
+    
+    // Add headers to prevent caching
+    const response = NextResponse.json({ success: true, data })
+    response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate')
+    response.headers.set('Pragma', 'no-cache')
+    response.headers.set('Expires', '0')
+    
+    return response
   } catch (error) {
-    console.error('Failed to create item:', error)
-    return NextResponse.json({ error: 'Failed to create item' }, { status: 500 })
+    console.error('POST /api/store - Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      error
+    })
+    
+    const errorMessage = error instanceof Error ? error.message : 'Failed to create item'
+    return NextResponse.json({ 
+      error: errorMessage,
+      details: process.env.NODE_ENV === 'development' ? error : undefined
+    }, { status: 500 })
   }
 }
 
