@@ -2,6 +2,7 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
+import { DataInitializer } from "@/components/data-initializer"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -160,14 +161,18 @@ export default function RootLayout({
                 longitude: "-43.5982",
               },
               openingHours: ["Mo-Fr 09:00-18:00", "Sa 09:00-15:00"],
-              priceRange: "$$",
+              priceRange: "$",
               image: "https://printsbrindes.com.br/logo.png",
               sameAs: ["https://facebook.com/printsbrindes", "https://instagram.com/printsbrindes"],
             }),
           }}
         />
       </head>
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        <DataInitializer>
+          {children}
+        </DataInitializer>
+      </body>
     </html>
   )
 }

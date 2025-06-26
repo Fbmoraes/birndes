@@ -1,6 +1,4 @@
-// Database abstraction layer with Vercel KV for persistence
-import { kv } from '@vercel/kv'
-
+// Database abstraction layer with multiple persistence strategies
 interface DatabaseData {
   products: any[]
   catalogItems: any[]
@@ -98,56 +96,118 @@ const defaultData: DatabaseData = {
 
 const KV_KEY = 'printsbrindes_data'
 
-// Fallback for local development without KV
-const useKV = process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN
+// Global cache for serverless functions
+let globalCache: DatabaseData | null = null
+let cacheTimestamp = 0
+const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
+
+// Check if we're in production with KV available
+const isKVAvailable = () => {
+  return !!(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN)
+}
+
+// Lazy import KV to avoid errors in development
+const getKV = async () => {
+  if (isKVAvailable()) {
+    try {
+      const { kv } = await import('@vercel/kv')
+      return kv
+    } catch (error) {
+      console.warn('Failed to import @vercel/kv:', error)
+      return null
+    }
+  }
+  return null
+}
 
 export class Database {
   static async read(): Promise<DatabaseData> {
+    // Check cache first
+    const now = Date.now()
+    if (globalCache && (now - cacheTimestamp) < CACHE_DURATION) {
+      console.log('Data loaded from cache')
+      return globalCache
+    }
+
     try {
-      if (useKV) {
-        // Try to read from Vercel KV
+      // Try to read from Vercel KV
+      const kv = await getKV()
+      if (kv) {
         const data = await kv.get<DatabaseData>(KV_KEY)
-        if (data) {
+        if (data && data.products && data.catalogItems && data.settings) {
           console.log('Data loaded from Vercel KV')
+          globalCache = data
+          cacheTimestamp = now
           return data
+        } else {
+          console.log('No valid data in KV, initializing with defaults')
+          // Initialize KV with default data
+          await kv.set(KV_KEY, defaultData)
+          globalCache = { ...defaultData }
+          cacheTimestamp = now
+          return globalCache
         }
       }
     } catch (error) {
-      console.warn('Failed to read from KV, using defaults:', error)
+      console.warn('Failed to read from KV:', error)
     }
 
     // Fallback to default data
-    console.log('Using default data')
-    return { ...defaultData }
+    console.log('Using default data (KV not available)')
+    globalCache = { ...defaultData }
+    cacheTimestamp = now
+    return globalCache
   }
 
   static async write(data: DatabaseData): Promise<void> {
+    // Validate data structure
+    if (!data || !data.products || !data.catalogItems || !data.settings) {
+      throw new Error('Invalid data structure')
+    }
+
     try {
-      if (useKV) {
-        // Save to Vercel KV
+      // Save to Vercel KV
+      const kv = await getKV()
+      if (kv) {
         await kv.set(KV_KEY, data)
         console.log('Data saved to Vercel KV')
+        
+        // Update cache
+        globalCache = { ...data }
+        cacheTimestamp = Date.now()
         return
       }
     } catch (error) {
       console.error('Failed to write to KV:', error)
+      throw error
     }
 
-    // Fallback - just log for local development
-    console.log('Data would be saved (KV not available)')
+    // Update cache even if KV fails
+    globalCache = { ...data }
+    cacheTimestamp = Date.now()
+    console.log('Data updated in cache (KV not available)')
   }
 
   static async reset(): Promise<void> {
     try {
-      if (useKV) {
+      const kv = await getKV()
+      if (kv) {
         await kv.set(KV_KEY, defaultData)
         console.log('Data reset in Vercel KV')
-        return
       }
     } catch (error) {
       console.error('Failed to reset KV data:', error)
     }
 
-    console.log('Data would be reset (KV not available)')
+    // Reset cache
+    globalCache = { ...defaultData }
+    cacheTimestamp = Date.now()
+    console.log('Data reset in cache')
+  }
+
+  static clearCache(): void {
+    globalCache = null
+    cacheTimestamp = 0
+    console.log('Cache cleared')
   }
 }

@@ -154,15 +154,28 @@ export const useStore = create<Store>()(
         try {
           set({ isLoading: true })
           const data = await apiCall('store')
-          set({
-            products: data.products || [],
-            catalogItems: data.catalogItems || [],
+          
+          // Ensure we have valid data structure
+          const validData = {
+            products: Array.isArray(data.products) ? data.products : [],
+            catalogItems: Array.isArray(data.catalogItems) ? data.catalogItems : [],
             settings: data.settings || get().settings,
+          }
+          
+          set({
+            ...validData,
             isLoading: false,
+          })
+          
+          console.log('Data fetched successfully:', {
+            productsCount: validData.products.length,
+            catalogItemsCount: validData.catalogItems.length,
+            hasSettings: !!validData.settings
           })
         } catch (error) {
           console.error('Failed to fetch data:', error)
           set({ isLoading: false })
+          throw error
         }
       },
 
@@ -173,7 +186,20 @@ export const useStore = create<Store>()(
             method: 'POST',
             body: JSON.stringify({ type: 'products', item: product }),
           })
-          set({ products: data.data.products })
+          
+          // Update all data from response
+          if (data.data) {
+            set({
+              products: Array.isArray(data.data.products) ? data.data.products : get().products,
+              catalogItems: Array.isArray(data.data.catalogItems) ? data.data.catalogItems : get().catalogItems,
+              settings: data.data.settings || get().settings,
+            })
+            
+            console.log('Product added successfully:', {
+              productsCount: data.data.products?.length || 0,
+              newProduct: product.name
+            })
+          }
         } catch (error) {
           console.error('Failed to add product:', error)
           if (error instanceof Error && error.message.includes('Unauthorized')) {
