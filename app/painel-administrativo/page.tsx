@@ -145,7 +145,7 @@ export default function PainelAdministrativoPage() {
     })
   }
 
-  // Enhanced image compression with better error handling
+  // Simplified and robust image compression
   const compressImage = (file: File, maxWidth: number = 400, quality: number = 0.5): Promise<string> => {
     return new Promise((resolve, reject) => {
       console.log('Starting image compression:', {
@@ -161,79 +161,83 @@ export default function PainelAdministrativoPage() {
         return
       }
 
-      const canvas = document.createElement('canvas')
-      const ctx = canvas.getContext('2d')
+      // Use FileReader for better compatibility
+      const reader = new FileReader()
       
-      if (!ctx) {
-        reject(new Error('Não foi possível criar contexto do canvas'))
-        return
-      }
+      reader.onload = function(event) {
+        const img = document.createElement('img')
+        
+        img.onload = function() {
+          try {
+            console.log('Image loaded:', {
+              originalWidth: img.width,
+              originalHeight: img.height
+            })
 
-      const img = new Image()
-      
-      img.onload = () => {
-        try {
-          console.log('Image loaded:', {
-            originalWidth: img.width,
-            originalHeight: img.height
-          })
+            // Create canvas
+            const canvas = document.createElement('canvas')
+            const ctx = canvas.getContext('2d')
+            
+            if (!ctx) {
+              reject(new Error('Não foi possível criar contexto do canvas'))
+              return
+            }
 
-          // Calculate new dimensions maintaining aspect ratio
-          let { width, height } = img
-          
-          if (width > height) {
-            if (width > maxWidth) {
-              height = (height * maxWidth) / width
-              width = maxWidth
+            // Calculate new dimensions maintaining aspect ratio
+            let newWidth = img.width
+            let newHeight = img.height
+            
+            if (newWidth > newHeight) {
+              if (newWidth > maxWidth) {
+                newHeight = (newHeight * maxWidth) / newWidth
+                newWidth = maxWidth
+              }
+            } else {
+              if (newHeight > maxWidth) {
+                newWidth = (newWidth * maxWidth) / newHeight
+                newHeight = maxWidth
+              }
             }
-          } else {
-            if (height > maxWidth) {
-              width = (width * maxWidth) / height
-              height = maxWidth
-            }
+
+            // Set canvas dimensions
+            canvas.width = newWidth
+            canvas.height = newHeight
+
+            // Draw image on canvas
+            ctx.drawImage(img, 0, 0, newWidth, newHeight)
+
+            // Convert to compressed JPEG
+            const compressedDataUrl = canvas.toDataURL('image/jpeg', quality)
+            
+            console.log('Image compressed successfully:', {
+              newWidth,
+              newHeight,
+              originalSize: file.size,
+              compressedSize: compressedDataUrl.length,
+              compressionRatio: ((file.size - compressedDataUrl.length) / file.size * 100).toFixed(1) + '%'
+            })
+
+            resolve(compressedDataUrl)
+          } catch (error) {
+            console.error('Error during compression:', error)
+            reject(new Error('Erro ao comprimir a imagem'))
           }
-
-          // Set canvas dimensions
-          canvas.width = width
-          canvas.height = height
-
-          // Clear canvas and draw image
-          ctx.clearRect(0, 0, width, height)
-          ctx.drawImage(img, 0, 0, width, height)
-
-          // Convert to compressed JPEG
-          const compressedDataUrl = canvas.toDataURL('image/jpeg', quality)
-          
-          console.log('Image compressed successfully:', {
-            newWidth: width,
-            newHeight: height,
-            originalSize: file.size,
-            compressedSize: compressedDataUrl.length,
-            compressionRatio: ((file.size - compressedDataUrl.length) / file.size * 100).toFixed(1) + '%'
-          })
-
-          // Clean up
-          URL.revokeObjectURL(img.src)
-          resolve(compressedDataUrl)
-        } catch (error) {
-          console.error('Error during compression:', error)
-          reject(new Error('Erro ao comprimir a imagem'))
         }
+        
+        img.onerror = function() {
+          reject(new Error('Erro ao carregar a imagem'))
+        }
+
+        // Set image source from FileReader result
+        img.src = event.target?.result as string
       }
       
-      img.onerror = (error) => {
-        console.error('Error loading image:', error)
-        URL.revokeObjectURL(img.src)
-        reject(new Error('Erro ao carregar a imagem'))
+      reader.onerror = function() {
+        reject(new Error('Erro ao ler o arquivo'))
       }
 
-      // Create object URL and load image
-      try {
-        img.src = URL.createObjectURL(file)
-      } catch (error) {
-        console.error('Error creating object URL:', error)
-        reject(new Error('Erro ao processar o arquivo'))
-      }
+      // Read file as data URL
+      reader.readAsDataURL(file)
     })
   }
 
