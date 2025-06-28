@@ -24,118 +24,141 @@ import {
   RefreshCw,
   Settings,
   ArrowLeft,
+  DollarSign,
+  ShoppingCart,
+  MessageCircle,
+  Smartphone,
+  Monitor,
+  Tablet,
 } from "lucide-react"
 import Image from "next/image"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useStore } from "@/lib/store-new"
 
-interface SEOMetrics {
+interface AnalyticsData {
   pageViews: number
   uniqueVisitors: number
+  conversionRate: number
+  avgOrderValue: number
+  totalOrders: number
+  totalRevenue: number
+  topProducts: Array<{
+    name: string
+    orders: number
+    revenue: number
+  }>
+  trafficSources: Array<{
+    source: string
+    visitors: number
+    percentage: number
+  }>
+  deviceStats: {
+    mobile: number
+    desktop: number
+    tablet: number
+  }
+  timeOnSite: string
   bounceRate: number
-  avgSessionDuration: string
-  topKeywords: string[]
-  topPages: { page: string; views: number }[]
-  searchConsoleClicks: number
-  searchConsoleImpressions: number
-  searchConsoleCTR: number
-  avgPosition: number
 }
 
-interface SEOIssue {
-  type: "error" | "warning" | "success"
-  title: string
-  description: string
-  page?: string
-  priority: "high" | "medium" | "low"
+interface SEOData {
+  organicClicks: number
+  impressions: number
+  avgPosition: number
+  ctr: number
+  indexedPages: number
+  topKeywords: Array<{
+    keyword: string
+    position: number
+    clicks: number
+  }>
+  technicalIssues: Array<{
+    type: "error" | "warning" | "success"
+    title: string
+    description: string
+    priority: "high" | "medium" | "low"
+  }>
 }
 
 export default function SEODashboard() {
   const router = useRouter()
-  const { isAuthenticated, settings, updateSettings } = useStore()
+  const { isAuthenticated, settings, updateSettings, products, cartItems } = useStore()
   const [activeTab, setActiveTab] = useState("overview")
+  const [isLoading, setIsLoading] = useState(true)
+  const [lastUpdate, setLastUpdate] = useState<string>("")
+  
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null)
+  const [seoData, setSeoData] = useState<SEOData | null>(null)
+  
   const [seoSettings, setSeoSettings] = useState({
     siteTitle: "PrintsBrindes - Presentes e Artigos Personalizados",
     siteDescription:
       "Presentes e artigos para festas personalizados! Canecas, cadernos, bolos e muito mais, tudo personalizado do seu jeito!",
     keywords:
       "presentes personalizados, brindes, festas, canecas, cadernos, bolos, personalização, Guaratiba, Rio de Janeiro",
-    googleAnalyticsId: "",
-    googleSearchConsoleId: "",
-    facebookPixelId: "",
+    googleAnalyticsId: settings?.googleAnalyticsId || "",
+    googleSearchConsoleId: settings?.googleSearchConsoleId || "",
+    facebookPixelId: settings?.facebookPixelId || "",
     customDomain: "printsbrindes.com.br",
   })
 
-  // Mock SEO metrics (in production, these would come from real analytics APIs)
-  const [metrics, setMetrics] = useState<SEOMetrics>({
-    pageViews: 1250,
-    uniqueVisitors: 890,
-    bounceRate: 45.2,
-    avgSessionDuration: "2m 34s",
-    topKeywords: [
-      "presentes personalizados",
-      "brindes festa",
-      "canecas personalizadas",
-      "bolos personalizados",
-      "lembrancinhas",
-    ],
-    topPages: [
-      { page: "/", views: 450 },
-      { page: "/produtos", views: 320 },
-      { page: "/produto/relogio-personalizado", views: 180 },
-      { page: "/produto/caderno-colorir", views: 150 },
-      { page: "/sobre-nos", views: 100 },
-    ],
-    searchConsoleClicks: 234,
-    searchConsoleImpressions: 5670,
-    searchConsoleCTR: 4.1,
-    avgPosition: 12.5,
-  })
-
-  const [seoIssues, setSeoIssues] = useState<SEOIssue[]>([
-    {
-      type: "success",
-      title: "Sitemap.xml configurado",
-      description: "Sitemap está ativo e sendo indexado pelo Google",
-      priority: "low",
-    },
-    {
-      type: "success",
-      title: "Robots.txt configurado",
-      description: "Arquivo robots.txt está configurado corretamente",
-      priority: "low",
-    },
-    {
-      type: "warning",
-      title: "Google Analytics não configurado",
-      description: "Configure o Google Analytics para acompanhar o tráfego do site",
-      priority: "high",
-    },
-    {
-      type: "warning",
-      title: "Google Search Console não verificado",
-      description: "Verifique seu site no Google Search Console para monitorar a indexação",
-      priority: "high",
-    },
-    {
-      type: "error",
-      title: "Algumas imagens sem alt text",
-      description: "Adicione texto alternativo em todas as imagens para melhorar a acessibilidade",
-      page: "/produtos",
-      priority: "medium",
-    },
-  ])
+  // Calcular valor total dos produtos (simulando vendas via WhatsApp)
+  const totalProductValue = products.reduce((sum, product) => sum + product.price, 0)
+  const cartValue = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+  
+  // Função para buscar dados reais de analytics
+  const fetchAnalyticsData = async () => {
+    try {
+      setIsLoading(true)
+      const response = await fetch('/api/analytics?type=all', {
+        method: 'GET',
+        headers: {
+          'Cache-Control': 'no-cache',
+        },
+      })
+      
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success) {
+          setAnalyticsData(result.data.analytics)
+          setSeoData(result.data.seo)
+          setLastUpdate(new Date().toLocaleString('pt-BR'))
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao buscar dados de analytics:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   useEffect(() => {
     if (!isAuthenticated) {
       router.push("/area-administrativa")
+    } else {
+      fetchAnalyticsData()
     }
   }, [isAuthenticated, router])
 
-  const handleSaveSEOSettings = () => {
-    // In a real implementation, you would save these to your backend
-    alert("✅ Configurações de SEO salvas com sucesso!")
+  // Atualizar dados a cada 5 minutos
+  useEffect(() => {
+    const interval = setInterval(fetchAnalyticsData, 5 * 60 * 1000)
+    return () => clearInterval(interval)
+  }, [])
+
+  const handleSaveSEOSettings = async () => {
+    try {
+      // Salvar configurações no backend
+      await updateSettings({
+        googleAnalyticsId: seoSettings.googleAnalyticsId,
+        googleSearchConsoleId: seoSettings.googleSearchConsoleId,
+        facebookPixelId: seoSettings.facebookPixelId,
+      })
+      alert("✅ Configurações de SEO salvas com sucesso!")
+    } catch (error) {
+      alert("❌ Erro ao salvar configurações. Tente novamente.")
+    }
   }
 
   const copyToClipboard = (text: string) => {
@@ -143,12 +166,33 @@ export default function SEODashboard() {
     alert("📋 Copiado para a área de transferência!")
   }
 
-  const generateSitemap = () => {
-    alert("✅ Sitemap regenerado com sucesso!")
+  const generateSitemap = async () => {
+    try {
+      // Regenerar sitemap
+      await fetch('/api/sitemap/generate', { method: 'POST' })
+      alert("✅ Sitemap regenerado com sucesso!")
+    } catch (error) {
+      alert("❌ Erro ao regenerar sitemap.")
+    }
+  }
+
+  const handleRefreshData = () => {
+    fetchAnalyticsData()
   }
 
   if (!isAuthenticated) {
     return <div>Carregando...</div>
+  }
+
+  if (isLoading && !analyticsData) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-pink-50 to-white flex items-center justify-center">
+        <div className="text-center">
+          <RefreshCw className="w-8 h-8 animate-spin text-pink-500 mx-auto mb-4" />
+          <p className="text-gray-600">Carregando dados de analytics...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -172,21 +216,33 @@ export default function SEODashboard() {
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="text-3xl font-bold text-gray-800">Dashboard SEO</h1>
-              <p className="text-gray-600">Monitore e otimize a performance do seu site nos mecanismos de busca</p>
+              <h1 className="text-3xl font-bold text-gray-800">Dashboard SEO & Analytics</h1>
+              <p className="text-gray-600">Monitore vendas, tráfego e performance do seu site em tempo real</p>
+              {lastUpdate && (
+                <p className="text-sm text-gray-500 mt-1">
+                  Última atualização: {lastUpdate}
+                </p>
+              )}
             </div>
-            <Button onClick={generateSitemap} className="bg-pink-500 hover:bg-pink-600 text-white">
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Atualizar Sitemap
-            </Button>
+            <div className="flex space-x-2">
+              <Button onClick={handleRefreshData} variant="outline" disabled={isLoading}>
+                <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                Atualizar Dados
+              </Button>
+              <Button onClick={generateSitemap} className="bg-pink-500 hover:bg-pink-600 text-white">
+                <Settings className="w-4 h-4 mr-2" />
+                Configurar
+              </Button>
+            </div>
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="overview">Visão Geral</TabsTrigger>
-              <TabsTrigger value="keywords">Palavras-chave</TabsTrigger>
-              <TabsTrigger value="pages">Páginas</TabsTrigger>
-              <TabsTrigger value="issues">Problemas</TabsTrigger>
+              <TabsTrigger value="sales">Vendas & Conversões</TabsTrigger>
+              <TabsTrigger value="seo">SEO & Palavras-chave</TabsTrigger>
+              <TabsTrigger value="traffic">Tráfego & Dispositivos</TabsTrigger>
+              <TabsTrigger value="issues">Problemas Técnicos</TabsTrigger>
               <TabsTrigger value="settings">Configurações</TabsTrigger>
             </TabsList>
 
