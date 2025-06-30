@@ -37,8 +37,7 @@ export default function AreaAdministrativaPage() {
 
     const success = await login(formData.usuario, formData.senha)
     if (success) {
-      // Force a hard refresh when redirecting to the panel
-      window.location.href = "/painel-administrativo"
+      router.push("/painel-administrativo")
     } else {
       setError("Credenciais inválidas!")
     }

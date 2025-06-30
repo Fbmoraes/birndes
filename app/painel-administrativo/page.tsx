@@ -44,7 +44,6 @@ import Image from "next/image"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useStore, type Product, type CatalogItem } from "@/lib/store-new"
-import SEODashboard from "./seo/SEODashboard"
 import { SyncIndicator } from "@/components/sync-indicator"
 
 export default function PainelAdministrativoPage() {
@@ -1100,245 +1099,75 @@ ${imageMessage}
           )}
 
           {/* SEO Dashboard Tab */}
-          {activeTab === "seo" && <SEODashboard />}
-                </Card>
-
-                <Card className="bg-white border border-gray-200 p-6">
-                  <CardContent className="p-0 flex items-center space-x-4">
-                    <div className="bg-green-100 rounded-full w-12 h-12 flex items-center justify-center">
-                      <Users className="w-6 h-6 text-green-500" />
-                    </div>
-                    <div>
-                      <p className="text-gray-600 text-sm">Visitantes Únicos</p>
-                      <p className="text-2xl font-bold text-gray-800">890</p>
-                      <p className="text-green-600 text-sm">+8% vs mês anterior</p>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-white border border-gray-200 p-6">
-                  <CardContent className="p-0 flex items-center space-x-4">
-                    <div className="bg-yellow-100 rounded-full w-12 h-12 flex items-center justify-center">
-                      <MousePointer className="w-6 h-6 text-yellow-600" />
-                    </div>
-                    <div>
-                      <p className="text-gray-600 text-sm">Taxa de Rejeição</p>
-                      <p className="text-2xl font-bold text-gray-800">45.2%</p>
-                      <p className="text-red-600 text-sm">+2% vs mês anterior</p>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-white border border-gray-200 p-6">
-                  <CardContent className="p-0 flex items-center space-x-4">
-                    <div className="bg-purple-100 rounded-full w-12 h-12 flex items-center justify-center">
-                      <BarChart3 className="w-6 h-6 text-purple-500" />
-                    </div>
-                    <div>
-                      <p className="text-gray-600 text-sm">Posição Média Google</p>
-                      <p className="text-2xl font-bold text-gray-800">12.5</p>
-                      <p className="text-green-600 text-sm">-1.2 vs mês anterior</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* SEO Tools and Configuration */}
-              <div className="grid md:grid-cols-2 gap-6">
-                <Card className="bg-white border border-gray-200">
-                  <CardContent className="p-6">
-                    <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                      <Search className="w-5 h-5 mr-2" />
-                      Configurações SEO
-                    </h3>
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="seoTitle">Título Principal do Site</Label>
-                        <Input
-                          id="seoTitle"
-                          defaultValue="PrintsBrindes - Presentes e Artigos Personalizados"
-                          className="mt-1"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="seoDescription">Descrição Meta</Label>
-                        <Textarea
-                          id="seoDescription"
-                          defaultValue="Presentes e artigos para festas personalizados! Canecas, cadernos, bolos e muito mais, tudo personalizado do seu jeito!"
-                          rows={3}
-                          className="mt-1"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="seoKeywords">Palavras-chave Principais</Label>
-                        <Input
-                          id="seoKeywords"
-                          defaultValue="presentes personalizados, brindes, festas, canecas, cadernos, bolos"
-                          className="mt-1"
-                        />
-                      </div>
-                      <Button className="w-full bg-pink-500 hover:bg-pink-600 text-white">
-                        Salvar Configurações SEO
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-white border border-gray-200">
-                  <CardContent className="p-6">
-                    <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                      <BarChart3 className="w-5 h-5 mr-2" />
-                      Google Analytics & Search Console
-                    </h3>
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="googleAnalytics">Google Analytics ID</Label>
-                        <Input id="googleAnalytics" placeholder="G-XXXXXXXXXX" className="mt-1" />
-                      </div>
-                      <div>
-                        <Label htmlFor="searchConsole">Google Search Console</Label>
-                        <Input id="searchConsole" placeholder="Código de verificação" className="mt-1" />
-                      </div>
-                      <div>
-                        <Label htmlFor="facebookPixel">Facebook Pixel ID</Label>
-                        <Input id="facebookPixel" placeholder="123456789012345" className="mt-1" />
-                      </div>
-                      <Button className="w-full bg-blue-500 hover:bg-blue-600 text-white">Conectar Ferramentas</Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* SEO Status and Issues */}
-              <Card className="bg-white border border-gray-200">
-                <CardContent className="p-6">
-                  <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                    <AlertCircle className="w-5 h-5 mr-2" />
-                    Status SEO e Problemas Detectados
-                  </h3>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <CheckCircle className="w-5 h-5 text-green-500" />
-                        <div>
-                          <p className="font-medium text-gray-800">Sitemap.xml Configurado</p>
-                          <p className="text-sm text-gray-600">Sitemap está ativo e sendo indexado pelo Google</p>
-                        </div>
-                      </div>
-                      <Badge className="bg-green-100 text-green-700">OK</Badge>
-                    </div>
-
-                    <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <CheckCircle className="w-5 h-5 text-green-500" />
-                        <div>
-                          <p className="font-medium text-gray-800">Robots.txt Configurado</p>
-                          <p className="text-sm text-gray-600">Arquivo robots.txt está configurado corretamente</p>
-                        </div>
-                      </div>
-                      <Badge className="bg-green-100 text-green-700">OK</Badge>
-                    </div>
-
-                    <div className="flex items-center justify-between p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <AlertCircle className="w-5 h-5 text-yellow-500" />
-                        <div>
-                          <p className="font-medium text-gray-800">Google Analytics não configurado</p>
-                          <p className="text-sm text-gray-600">
-                            Configure o Google Analytics para acompanhar o tráfego
-                          </p>
-                        </div>
-                      </div>
-                      <Badge className="bg-yellow-100 text-yellow-700">Atenção</Badge>
-                    </div>
-
-                    <div className="flex items-center justify-between p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <AlertCircle className="w-5 h-5 text-yellow-500" />
-                        <div>
-                          <p className="font-medium text-gray-800">Google Search Console não verificado</p>
-                          <p className="text-sm text-gray-600">Verifique seu site no Google Search Console</p>
-                        </div>
-                      </div>
-                      <Badge className="bg-yellow-100 text-yellow-700">Pendente</Badge>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* SEO Tools */}
-              <Card className="bg-white border border-gray-200">
-                <CardContent className="p-6">
-                  <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                    <Settings className="w-5 h-5 mr-2" />
-                    Ferramentas SEO
-                  </h3>
-                  <div className="grid md:grid-cols-4 gap-4">
-                    <div className="p-4 border border-gray-200 rounded-lg text-center">
-                      <Globe className="w-8 h-8 text-blue-500 mx-auto mb-2" />
-                      <h4 className="font-medium text-gray-800 mb-2">Sitemap.xml</h4>
-                      <Button variant="outline" size="sm" className="w-full">
-                        <ExternalLink className="w-4 h-4 mr-1" />
-                        Visualizar
-                      </Button>
-                    </div>
-
-                    <div className="p-4 border border-gray-200 rounded-lg text-center">
-                      <Target className="w-8 h-8 text-green-500 mx-auto mb-2" />
-                      <h4 className="font-medium text-gray-800 mb-2">Robots.txt</h4>
-                      <Button variant="outline" size="sm" className="w-full">
-                        <ExternalLink className="w-4 h-4 mr-1" />
-                        Visualizar
-                      </Button>
-                    </div>
-
-                    <div className="p-4 border border-gray-200 rounded-lg text-center">
-                      <BarChart3 className="w-8 h-8 text-purple-500 mx-auto mb-2" />
-                      <h4 className="font-medium text-gray-800 mb-2">Relatório SEO</h4>
-                      <Button variant="outline" size="sm" className="w-full">
-                        <Download className="w-4 h-4 mr-1" />
-                        Baixar
-                      </Button>
-                    </div>
-
-                    <div className="p-4 border border-gray-200 rounded-lg text-center">
-                      <RefreshCw className="w-8 h-8 text-orange-500 mx-auto mb-2" />
-                      <h4 className="font-medium text-gray-800 mb-2">Atualizar</h4>
-                      <Button variant="outline" size="sm" className="w-full">
-                        <RefreshCw className="w-4 h-4 mr-1" />
-                        Regenerar
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Top Keywords and Pages Performance */}
-              <div className="grid md:grid-cols-2 gap-6">
-                <Card className="bg-white border border-gray-200">
-                  <CardContent className="p-6">
-                    <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                      <TrendingUp className="w-5 h-5 mr-2" />
-                      Palavras-chave Principais
-                    </h3>
-                    <div className="space-y-3">
-                      {[
-                        { keyword: "presentes personalizados", position: 8, volume: "1.2k" },
-                        { keyword: "brindes festa", position: 12, volume: "890" },
-                        { keyword: "canecas personalizadas", position: 15, volume: "650" },
-                        { keyword: "bolos personalizados", position: 18, volume: "420" },
-                        { keyword: "lembrancinhas guaratiba", position: 22, volume: "180" },
-                      ].map((item, index) => (
-                        <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                          <div>
-                            <p className="font-medium text-gray-800 text-sm">{item.keyword}</p>
-                            <p className="text-xs text-gray-600">Volume: {item.volume}/mês</p>
-                          </div>
-                          <Badge variant="outline" className="text-xs">
-                            Pos. {item.position}
-                          </Badge>
-                        </div>
-                      ))}
+          {activeTab === "seo" && (
+  <Card className="bg-white border border-gray-200">
+    <CardContent className="p-6 space-y-8">
+      <div>
+        <h2 className="text-2xl font-bold text-gray-800 mb-2">SEO do Site</h2>
+        <p className="text-gray-600 mb-4">Configure as principais informações de SEO do seu site para melhorar o posicionamento no Google.</p>
+        <form
+          className="space-y-4 max-w-xl"
+          onSubmit={e => {
+            e.preventDefault();
+            updateSettings({
+              ...settings,
+              seo: {
+                title: (document.getElementById('seoTitle') as HTMLInputElement)?.value || '',
+                description: (document.getElementById('seoDescription') as HTMLTextAreaElement)?.value || '',
+                keywords: (document.getElementById('seoKeywords') as HTMLInputElement)?.value || '',
+              },
+            });
+            alert('✅ Configurações de SEO salvas!');
+          }}
+        >
+          <div>
+            <Label htmlFor="seoTitle">Título do Site</Label>
+            <Input
+              id="seoTitle"
+              defaultValue={settingsForm.seo.title}
+              placeholder="Ex: PrintsBrindes - Presentes e Artigos Personalizados"
+              className="mt-1"
+            />
+          </div>
+          <div>
+            <Label htmlFor="seoDescription">Descrição do Site</Label>
+            <Textarea
+              id="seoDescription"
+              defaultValue={settingsForm.seo.description}
+              placeholder="Ex: Presentes e artigos para festas personalizados! Canecas, cadernos, bolos e muito mais, tudo personalizado do seu jeito!"
+              rows={3}
+              className="mt-1"
+            />
+          </div>
+          <div>
+            <Label htmlFor="seoKeywords">Palavras-chave (separadas por vírgula)</Label>
+            <Input
+              id="seoKeywords"
+              defaultValue={settingsForm.seo.keywords}
+              placeholder="Ex: presentes personalizados, brindes, festas, canecas, cadernos, bolos"
+              className="mt-1"
+            />
+          </div>
+          <Button type="submit" className="bg-pink-500 hover:bg-pink-600 text-white w-full">Salvar SEO</Button>
+        </form>
+      </div>
+      <div className="grid md:grid-cols-2 gap-6">
+        <Card className="border border-gray-200">
+          <CardContent className="p-4 flex flex-col items-center">
+            <span className="font-medium text-gray-800 mb-2">Sitemap.xml</span>
+            <a href="/sitemap.xml" target="_blank" rel="noopener noreferrer" className="text-pink-500 underline">Abrir sitemap.xml</a>
+          </CardContent>
+        </Card>
+        <Card className="border border-gray-200">
+          <CardContent className="p-4 flex flex-col items-center">
+            <span className="font-medium text-gray-800 mb-2">Robots.txt</span>
+            <a href="/robots.txt" target="_blank" rel="noopener noreferrer" className="text-pink-500 underline">Abrir robots.txt</a>
+          </CardContent>
+        </Card>
+      </div>
+    </CardContent>
+  </Card>
+)}
                     </div>
                   </CardContent>
                 </Card>
