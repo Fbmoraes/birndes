@@ -101,7 +101,39 @@ function generateSEOMetrics() {
       { type: "success", title: "Mobile-Friendly", description: "Site otimizado para dispositivos móveis", priority: "low" },
       { type: "warning", title: "Meta Descriptions", description: "3 páginas sem meta description", priority: "medium" },
       { type: "error", title: "Imagens sem Alt Text", description: "12 imagens precisam de texto alternativo", priority: "high" }
-    ]
+    ],
+    localSEO: {
+      googleMyBusinessViews: Math.floor(1200 + Math.random() * 800),
+      localRankings: [
+        { keyword: "presentes personalizados guaratiba", position: Math.floor(1 + Math.random() * 3) },
+        { keyword: "brindes guaratiba", position: Math.floor(2 + Math.random() * 4) },
+        { keyword: "canecas personalizadas rj", position: Math.floor(1 + Math.random() * 5) }
+      ],
+      reviews: {
+        total: 45,
+        averageRating: 4.6,
+        recentReviews: [
+          { user: "Maria", rating: 5, comment: "Excelente atendimento e qualidade!" },
+          { user: "João", rating: 4, comment: "Entrega rápida e produtos ótimos." }
+        ]
+      }
+    },
+    socialMedia: {
+      facebookLikes: Math.floor(500 + Math.random() * 300),
+      instagramFollowers: Math.floor(1200 + Math.random() * 800),
+      twitterMentions: Math.floor(50 + Math.random() * 30)
+    },
+    whatsappSales: {
+      totalOrders: Math.floor(20 + Math.random() * 15),
+      totalRevenue: Number((1000 + Math.random() * 500).toFixed(2)),
+      avgOrderValue: Number((50 + Math.random() * 20).toFixed(2)),
+      avgResponseTime: `${Math.floor(1 + Math.random() * 3)}m ${Math.floor(Math.random() * 60)}s`
+    },
+    mobilePerformance: {
+      pageLoadTime: Number((1.5 + Math.random() * 1.5).toFixed(2)),
+      mobileBounceRate: Number((30 + Math.random() * 10).toFixed(1)),
+      mobileTrafficPercentage: Math.floor(60 + Math.random() * 20)
+    }
   }
 }
 

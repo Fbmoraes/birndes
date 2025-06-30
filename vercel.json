@@ -6,6 +6,9 @@
     },
     "app/api/auth/route.ts": {
       "maxDuration": 10
+    },
+    "app/api/analytics/route.ts": {
+      "maxDuration": 10
     }
   }
 }
