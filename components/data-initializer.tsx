@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useStore } from '@/lib/store-new'
+import { initializePersistence } from '@/lib/persistence-config'
 
 export function DataInitializer({ children }: { children: React.ReactNode }) {
   const { fetchData, checkAuth } = useStore()
@@ -14,6 +15,9 @@ export function DataInitializer({ children }: { children: React.ReactNode }) {
       try {
         setIsInitializing(true)
         setInitError(null)
+        
+        // Inicializar sistema de persistência
+        initializePersistence()
         
         await Promise.all([
           fetchData().catch(err => {

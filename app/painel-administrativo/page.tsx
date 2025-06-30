@@ -1,6 +1,3 @@
-// This file merges the existing PainelAdministrativoPage code with the newly created SEO Dashboard content,
-// so all functionality is under /painel-administrativo. The /painel-administrativo/seo folder can be removed.
-
 "use client"
 
 import type React from "react"
@@ -51,22 +48,7 @@ import { SyncIndicator } from "@/components/sync-indicator"
 
 export default function PainelAdministrativoPage() {
   const router = useRouter()
-  const {
-    products,
-    catalogItems,
-    addProduct,
-    updateProduct,
-    deleteProduct,
-    addCatalogItem,
-    updateCatalogItem,
-    deleteCatalogItem,
-    isAuthenticated,
-    logout,
-    settings,
-    updateSettings,
-    syncStatus,
-    syncMessage,
-  } = useStore()
+  const { products, catalogItems, addProduct, updateProduct, deleteProduct, addCatalogItem, updateCatalogItem, deleteCatalogItem, isAuthenticated, logout, settings, updateSettings, syncStatus, syncMessage } = useStore()
 
   const [activeTab, setActiveTab] = useState<"products" | "catalog" | "seo" | "settings">("products")
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
@@ -103,8 +85,8 @@ export default function PainelAdministrativoPage() {
     email: "",
     whatsappNumber: "",
     socialMedia: { facebook: "", instagram: "", whatsapp: "" },
-    seo: { title: "", description: "", keywords: "" },
-  }))
+    seo: { title: "", description: "", keywords: "" }
+  }));
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -126,8 +108,8 @@ export default function PainelAdministrativoPage() {
           title: settings.seo?.title || "",
           description: settings.seo?.description || "",
           keywords: settings.seo?.keywords || "",
-        },
-      })
+        }
+      });
     }
   }, [settings])
 
@@ -166,23 +148,45 @@ export default function PainelAdministrativoPage() {
   // Simplified and robust image compression
   const compressImage = (file: File, maxWidth: number = 400, quality: number = 0.5): Promise<string> => {
     return new Promise((resolve, reject) => {
-      if (!file.type.startsWith("image/")) {
-        reject(new Error("Arquivo deve ser uma imagem"))
+      console.log('Starting image compression:', {
+        fileName: file.name,
+        originalSize: file.size,
+        maxWidth,
+        quality
+      })
+
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        reject(new Error('Arquivo deve ser uma imagem'))
         return
       }
+
+      // Use FileReader for better compatibility
       const reader = new FileReader()
-      reader.onload = function (event) {
-        const img = document.createElement("img")
-        img.onload = function () {
+      
+      reader.onload = function(event) {
+        const img = document.createElement('img')
+        
+        img.onload = function() {
           try {
-            const canvas = document.createElement("canvas")
-            const ctx = canvas.getContext("2d")
+            console.log('Image loaded:', {
+              originalWidth: img.width,
+              originalHeight: img.height
+            })
+
+            // Create canvas
+            const canvas = document.createElement('canvas')
+            const ctx = canvas.getContext('2d')
+            
             if (!ctx) {
-              reject(new Error("Não foi possível criar contexto do canvas"))
+              reject(new Error('Não foi possível criar contexto do canvas'))
               return
             }
+
+            // Calculate new dimensions maintaining aspect ratio
             let newWidth = img.width
             let newHeight = img.height
+            
             if (newWidth > newHeight) {
               if (newWidth > maxWidth) {
                 newHeight = (newHeight * maxWidth) / newWidth
@@ -194,23 +198,45 @@ export default function PainelAdministrativoPage() {
                 newHeight = maxWidth
               }
             }
+
+            // Set canvas dimensions
             canvas.width = newWidth
             canvas.height = newHeight
+
+            // Draw image on canvas
             ctx.drawImage(img, 0, 0, newWidth, newHeight)
-            const compressedDataUrl = canvas.toDataURL("image/jpeg", quality)
+
+            // Convert to compressed JPEG
+            const compressedDataUrl = canvas.toDataURL('image/jpeg', quality)
+            
+            console.log('Image compressed successfully:', {
+              newWidth,
+              newHeight,
+              originalSize: file.size,
+              compressedSize: compressedDataUrl.length,
+              compressionRatio: ((file.size - compressedDataUrl.length) / file.size * 100).toFixed(1) + '%'
+            })
+
             resolve(compressedDataUrl)
           } catch (error) {
-            reject(new Error("Erro ao comprimir a imagem"))
+            console.error('Error during compression:', error)
+            reject(new Error('Erro ao comprimir a imagem'))
           }
         }
-        img.onerror = function () {
-          reject(new Error("Erro ao carregar a imagem"))
+        
+        img.onerror = function() {
+          reject(new Error('Erro ao carregar a imagem'))
         }
+
+        // Set image source from FileReader result
         img.src = event.target?.result as string
       }
-      reader.onerror = function () {
-        reject(new Error("Erro ao ler o arquivo"))
+      
+      reader.onerror = function() {
+        reject(new Error('Erro ao ler o arquivo'))
       }
+
+      // Read file as data URL
       reader.readAsDataURL(file)
     })
   }
@@ -223,47 +249,79 @@ export default function PainelAdministrativoPage() {
     if (!files || files.length === 0) {
       return
     }
+
+    console.log('Starting image upload process:', {
+      type,
+      fileCount: files.length,
+      files: Array.from(files).map(f => ({ name: f.name, size: f.size, type: f.type }))
+    })
+
     if (type === "product-multiple") {
+      // For multiple images, compress and add to images array
       let successCount = 0
       let errorCount = 0
+
       for (const file of Array.from(files)) {
-        if (!file.type.startsWith("image/")) {
+        console.log(`Processing file: ${file.name}`)
+
+        // Check file size (limit to 10MB before compression)
+        if (file.size > 10 * 1024 * 1024) {
+          alert(`❌ Arquivo ${file.name} é muito grande. Limite: 10MB por imagem.`)
+          errorCount++
+          continue
+        }
+
+        // Check file type
+        if (!file.type.startsWith('image/')) {
           alert(`❌ ${file.name} não é uma imagem válida.`)
           errorCount++
           continue
         }
+
         try {
+          console.log(`Compressing ${file.name}...`)
           const compressedImage = await compressImage(file, 400, 0.5)
+          
           setProductForm((prev) => ({
             ...prev,
             images: [...prev.images, compressedImage],
             mainImage: prev.mainImage || compressedImage,
           }))
+          
           successCount++
+          console.log(`✅ ${file.name} processed successfully`)
         } catch (error) {
-          alert(
-            `❌ Erro ao processar ${file.name}: ${
-              error instanceof Error ? error.message : "Erro desconhecido"
-            }`,
-          )
+          console.error(`❌ Error processing ${file.name}:`, error)
+          alert(`❌ Erro ao processar ${file.name}: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
           errorCount++
         }
       }
+
+      // Show summary
       if (successCount > 0) {
-        alert(
-          `✅ ${successCount} imagem(ns) adicionada(s) com sucesso!${
-            errorCount > 0 ? ` (${errorCount} falharam)` : ""
-          }`,
-        )
+        alert(`✅ ${successCount} imagem(ns) adicionada(s) com sucesso!${errorCount > 0 ? ` (${errorCount} falharam)` : ''}`)
       }
     } else {
+      // Single image upload
       const file = files[0]
-      if (!file.type.startsWith("image/")) {
+      console.log(`Processing single file: ${file.name}`)
+
+      // Check file size (limit to 10MB before compression)
+      if (file.size > 10 * 1024 * 1024) {
+        alert("❌ Arquivo muito grande. Limite: 10MB por imagem.")
+        return
+      }
+
+      // Check file type
+      if (!file.type.startsWith('image/')) {
         alert("❌ Arquivo deve ser uma imagem válida.")
         return
       }
+
       try {
+        console.log(`Compressing ${file.name}...`)
         const compressedImage = await compressImage(file, 400, 0.5)
+        
         if (type === "product") {
           setProductForm((prev) => ({
             ...prev,
@@ -273,12 +331,17 @@ export default function PainelAdministrativoPage() {
         } else if (type === "catalog") {
           setCatalogForm({ ...catalogForm, image: compressedImage })
         }
+        
+        console.log(`✅ ${file.name} processed successfully`)
         alert(`✅ Imagem ${file.name} adicionada com sucesso!`)
       } catch (error) {
-        alert(`❌ Erro ao processar a imagem: ${error instanceof Error ? error.message : "Erro desconhecido"}`)
+        console.error(`❌ Error processing ${file.name}:`, error)
+        alert(`❌ Erro ao processar a imagem: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
       }
     }
-    e.target.value = ""
+
+    // Clear the input to allow re-uploading the same file
+    e.target.value = ''
   }
 
   const removeProductImage = (index: number) => {
@@ -302,96 +365,33 @@ export default function PainelAdministrativoPage() {
 
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault()
+
     try {
+      // Validate required fields
       if (!productForm.name.trim()) {
         alert("Nome do produto é obrigatório!")
         return
       }
+
       if (!productForm.description.trim()) {
         alert("Descrição do produto é obrigatória!")
         return
       }
+
       if (!productForm.price || isNaN(Number.parseFloat(productForm.price))) {
         alert("Preço válido é obrigatório!")
         return
       }
+
       if (!productForm.category.trim()) {
         alert("Categoria do produto é obrigatória!")
         return
       }
+
+      // Use uploaded images or fallback to placeholders
       const productImages =
         productForm.images.length > 0
           ? productForm.images
-          : ["/placeholder.svg?height=400&width=400", "/placeholder.svg?height=400&width=400"]
-      const newProduct = {
-        name: productForm.name.trim(),
-        description: productForm.description.trim(),
-        price: Number.parseFloat(productForm.price),
-        category: productForm.category.trim(),
-        showOnHome: productForm.showOnHome,
-        images: productImages,
-        mainImage: productForm.mainImage || productImages[0],
-        personalization: productForm.personalization.trim() || "Disponível",
-        productionTime: productForm.productionTime.trim() || "3-7 dias úteis",
-      }
-      await addProduct(newProduct)
-      const slug =
-        productForm.name
-          .toLowerCase()
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .replace(/[^a-z0-9\s-]/g, "")
-          .replace(/\s+/g, "-")
-          .replace(/-+/g, "-")
-          .replace(/^-+|-+$/g, "")
-          .trim() || `produto-${Date.now()}`
-      const imageMessage =
-        productForm.images.length > 0
-          ? `🖼️ O produto foi criado com ${productForm.images.length} imagem(ns) personalizada(s).`
-          : `🖼️ O produto foi criado com imagens de demonstração.`
-      alert(
-        `✅ Produto "${productForm.name}" adicionado com sucesso!
-
-📄 Página criada automaticamente em: /produto/${slug}
-
-${imageMessage}
-
-🔗 Você pode acessar a página do produto através do link "Ver Detalhes" na lista de produtos.
-
-📱 Os dados serão sincronizados automaticamente em todos os dispositivos em até 30 segundos.`,
-      )
-      resetProductForm()
-      setIsAddDialogOpen(false)
-    } catch (error) {
-      alert(
-        `❌ Erro ao adicionar produto: ${
-          error instanceof Error ? error.message : "Erro desconhecido"
-        }. Tente novamente.`,
-      )
-    }
-  }
-
-  const handleEditProduct = (product: Product) => {
-    setEditingProduct(product)
-    setProductForm({
-      name: product.name,
-      description: product.description,
-      price: product.price.toString(),
-      category: product.category,
-      showOnHome: product.showOnHome || false,
-      images: product.images || [],
-      mainImage: product.mainImage || "",
-      personalization: product.personalization || "",
-      productionTime: product.productionTime || "",
-    })
-    setIsEditDialogOpen(true)
-  }
-
-  const handleUpdateProduct = (e: React.FormEvent) => {
-    e.preventDefault()
-    try {
-      if (editingProduct) {
-        if (!productForm.name.trim()) {
           : ["/placeholder.svg?height=400&width=400", "/placeholder.svg?height=400&width=400"]
 
       const newProduct = {

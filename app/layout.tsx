@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { DataInitializer } from "@/components/data-initializer"
+import { AnalyticsScripts } from "@/components/analytics-scripts"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -169,6 +170,7 @@ export default function RootLayout({
         />
       </head>
       <body className={inter.className}>
+        <AnalyticsScripts />
         <DataInitializer>
           {children}
         </DataInitializer>
