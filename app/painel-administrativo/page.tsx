@@ -44,6 +44,7 @@ import Image from "next/image"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useStore, type Product, type CatalogItem } from "@/lib/store-new"
+import SEODashboard from "./seo/SEODashboard"
 import { SyncIndicator } from "@/components/sync-indicator"
 
 export default function PainelAdministrativoPage() {
@@ -1099,21 +1100,7 @@ ${imageMessage}
           )}
 
           {/* SEO Dashboard Tab */}
-          {activeTab === "seo" && (
-            <div className="space-y-6">
-              {/* SEO Overview Cards */}
-              <div className="grid md:grid-cols-4 gap-6">
-                <Card className="bg-white border border-gray-200 p-6">
-                  <CardContent className="p-0 flex items-center space-x-4">
-                    <div className="bg-blue-100 rounded-full w-12 h-12 flex items-center justify-center">
-                      <Eye className="w-6 h-6 text-blue-500" />
-                    </div>
-                    <div>
-                      <p className="text-gray-600 text-sm">Visualizações</p>
-                      <p className="text-2xl font-bold text-gray-800">1,250</p>
-                      <p className="text-green-600 text-sm">+12% vs mês anterior</p>
-                    </div>
-                  </CardContent>
+          {activeTab === "seo" && <SEODashboard />}
                 </Card>
 
                 <Card className="bg-white border border-gray-200 p-6">
