@@ -1,5 +1,75 @@
 "use client"
 
+{activeTab === "seo" && (
+  <Card className="bg-white border border-gray-200">
+    <CardContent className="p-6 space-y-8">
+      <div>
+        <h2 className="text-2xl font-bold text-gray-800 mb-2">SEO do Site</h2>
+        <p className="text-gray-600 mb-4">Configure as principais informações de SEO do seu site para melhorar o posicionamento no Google.</p>
+        <form
+          className="space-y-4 max-w-xl"
+          onSubmit={e => {
+            e.preventDefault();
+            updateSettings({
+              ...settings,
+              seo: {
+                title: (document.getElementById('seoTitle') as HTMLInputElement)?.value || '',
+                description: (document.getElementById('seoDescription') as HTMLTextAreaElement)?.value || '',
+                keywords: (document.getElementById('seoKeywords') as HTMLInputElement)?.value || '',
+              },
+            });
+            alert('✅ Configurações de SEO salvas!');
+          }}
+        >
+          <div>
+            <Label htmlFor="seoTitle">Título do Site</Label>
+            <Input
+              id="seoTitle"
+              defaultValue={settingsForm.seo.title}
+              placeholder="Ex: PrintsBrindes - Presentes e Artigos Personalizados"
+              className="mt-1"
+            />
+          </div>
+          <div>
+            <Label htmlFor="seoDescription">Descrição do Site</Label>
+            <Textarea
+              id="seoDescription"
+              defaultValue={settingsForm.seo.description}
+              placeholder="Ex: Presentes e artigos para festas personalizados! Canecas, cadernos, bolos e muito mais, tudo personalizado do seu jeito!"
+              rows={3}
+              className="mt-1"
+            />
+          </div>
+          <div>
+            <Label htmlFor="seoKeywords">Palavras-chave (separadas por vírgula)</Label>
+            <Input
+              id="seoKeywords"
+              defaultValue={settingsForm.seo.keywords}
+              placeholder="Ex: presentes personalizados, brindes, festas, canecas, cadernos, bolos"
+              className="mt-1"
+            />
+          </div>
+          <Button type="submit" className="bg-pink-500 hover:bg-pink-600 text-white w-full">Salvar SEO</Button>
+        </form>
+      </div>
+      <div className="grid md:grid-cols-2 gap-6">
+        <Card className="border border-gray-200">
+          <CardContent className="p-4 flex flex-col items-center">
+            <span className="font-medium text-gray-800 mb-2">Sitemap.xml</span>
+            <a href="/sitemap.xml" target="_blank" rel="noopener noreferrer" className="text-pink-500 underline">Abrir sitemap.xml</a>
+          </CardContent>
+        </Card>
+        <Card className="border border-gray-200">
+          <CardContent className="p-4 flex flex-col items-center">
+            <span className="font-medium text-gray-800 mb-2">Robots.txt</span>
+            <a href="/robots.txt" target="_blank" rel="noopener noreferrer" className="text-pink-500 underline">Abrir robots.txt</a>
+          </CardContent>
+        </Card>
+      </div>
+    </CardContent>
+  </Card>
+) // FIM SEO DASHBOARD
+//
 import type React from "react"
 
 import { Button } from "@/components/ui/button"
@@ -1100,6 +1170,75 @@ ${imageMessage}
 
           {/* SEO Dashboard Tab */}
           {activeTab === "seo" && (
+  <Card className="bg-white border border-gray-200">
+    <CardContent className="p-6 space-y-8">
+      <div>
+        <h2 className="text-2xl font-bold text-gray-800 mb-2">SEO do Site</h2>
+        <p className="text-gray-600 mb-4">Configure as principais informações de SEO do seu site para melhorar o posicionamento no Google.</p>
+        <form
+          className="space-y-4 max-w-xl"
+          onSubmit={e => {
+            e.preventDefault();
+            updateSettings({
+              ...settings,
+              seo: {
+                title: (document.getElementById('seoTitle') as HTMLInputElement)?.value || '',
+                description: (document.getElementById('seoDescription') as HTMLTextAreaElement)?.value || '',
+                keywords: (document.getElementById('seoKeywords') as HTMLInputElement)?.value || '',
+              },
+            });
+            alert('✅ Configurações de SEO salvas!');
+          }}
+        >
+          <div>
+            <Label htmlFor="seoTitle">Título do Site</Label>
+            <Input
+              id="seoTitle"
+              defaultValue={settingsForm.seo.title}
+              placeholder="Ex: PrintsBrindes - Presentes e Artigos Personalizados"
+              className="mt-1"
+            />
+          </div>
+          <div>
+            <Label htmlFor="seoDescription">Descrição do Site</Label>
+            <Textarea
+              id="seoDescription"
+              defaultValue={settingsForm.seo.description}
+              placeholder="Ex: Presentes e artigos para festas personalizados! Canecas, cadernos, bolos e muito mais, tudo personalizado do seu jeito!"
+              rows={3}
+              className="mt-1"
+            />
+          </div>
+          <div>
+            <Label htmlFor="seoKeywords">Palavras-chave (separadas por vírgula)</Label>
+            <Input
+              id="seoKeywords"
+              defaultValue={settingsForm.seo.keywords}
+              placeholder="Ex: presentes personalizados, brindes, festas, canecas, cadernos, bolos"
+              className="mt-1"
+            />
+          </div>
+          <Button type="submit" className="bg-pink-500 hover:bg-pink-600 text-white w-full">Salvar SEO</Button>
+        </form>
+      </div>
+      <div className="grid md:grid-cols-2 gap-6">
+        <Card className="border border-gray-200">
+          <CardContent className="p-4 flex flex-col items-center">
+            <span className="font-medium text-gray-800 mb-2">Sitemap.xml</span>
+            <a href="/sitemap.xml" target="_blank" rel="noopener noreferrer" className="text-pink-500 underline">Abrir sitemap.xml</a>
+          </CardContent>
+        </Card>
+        <Card className="border border-gray-200">
+          <CardContent className="p-4 flex flex-col items-center">
+            <span className="font-medium text-gray-800 mb-2">Robots.txt</span>
+            <a href="/robots.txt" target="_blank" rel="noopener noreferrer" className="text-pink-500 underline">Abrir robots.txt</a>
+          </CardContent>
+        </Card>
+      </div>
+    </CardContent>
+  </Card>
+) // FIM SEO DASHBOARD
+//
   <Card className="bg-white border border-gray-200">
     <CardContent className="p-6 space-y-8">
       <div>
