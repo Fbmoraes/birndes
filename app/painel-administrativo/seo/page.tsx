@@ -1,4 +1,6 @@
 "use client"
+
+import type { FC, ChangeEvent } from 'react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -6,6 +8,25 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+interface Metrics {
+  pageViews: number
+  uniqueVisitors: number
+  timeOnSite: string
+  conversionRate: number
+  searchConsoleClicks: number
+  searchConsoleImpressions: number
+  searchConsoleCTR: number
+  topPages: Array<{ page: string, views: number }>
+  topKeywords: string[]
+  technicalIssues: Array<{
+    type: 'success' | 'warning' | 'error'
+    title: string
+    description: string
+    priority: 'high' | 'medium' | 'low'
+    page?: string
+  }>
+}
 import {
   Search,
   TrendingUp,
@@ -312,9 +333,8 @@ export default function SEODashboard() {
                         <MousePointer className="w-6 h-6 text-yellow-600" />
                       </div>
                       <div>
-                        <p className="text-gray-600 text-sm">Taxa de Rejeição</p>
-                        <p className="text-2xl font-bold text-gray-800">{metrics.bounceRate}%</p>
-                        <p className="text-red-600 text-sm">+2% vs mês anterior</p>
+                        <p className="text-gray-600 text-sm">Tempo de Permanência</p>
+                        <p className="text-2xl font-bold text-gray-800">{metrics.timeOnSite}</p>
                       </div>
                     </div>
                   </CardContent>
@@ -327,9 +347,8 @@ export default function SEODashboard() {
                         <BarChart3 className="w-6 h-6 text-purple-500" />
                       </div>
                       <div>
-                        <p className="text-gray-600 text-sm">Posição Média</p>
-                        <p className="text-2xl font-bold text-gray-800">{metrics.avgPosition}</p>
-                        <p className="text-green-600 text-sm">-1.2 vs mês anterior</p>
+                        <p className="text-gray-600 text-sm">Taxa de Conversão</p>
+                        <p className="text-2xl font-bold text-gray-800">{metrics.conversionRate}%</p>
                       </div>
                     </div>
                   </CardContent>
