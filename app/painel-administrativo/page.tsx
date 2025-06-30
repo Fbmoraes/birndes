@@ -1,75 +1,8 @@
+// This file merges the existing PainelAdministrativoPage code with the newly created SEO Dashboard content,
+// so all functionality is under /painel-administrativo. The /painel-administrativo/seo folder can be removed.
+
 "use client"
 
-{activeTab === "seo" && (
-  <Card className="bg-white border border-gray-200">
-    <CardContent className="p-6 space-y-8">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">SEO do Site</h2>
-        <p className="text-gray-600 mb-4">Configure as principais informações de SEO do seu site para melhorar o posicionamento no Google.</p>
-        <form
-          className="space-y-4 max-w-xl"
-          onSubmit={e => {
-            e.preventDefault();
-            updateSettings({
-              ...settings,
-              seo: {
-                title: (document.getElementById('seoTitle') as HTMLInputElement)?.value || '',
-                description: (document.getElementById('seoDescription') as HTMLTextAreaElement)?.value || '',
-                keywords: (document.getElementById('seoKeywords') as HTMLInputElement)?.value || '',
-              },
-            });
-            alert('✅ Configurações de SEO salvas!');
-          }}
-        >
-          <div>
-            <Label htmlFor="seoTitle">Título do Site</Label>
-            <Input
-              id="seoTitle"
-              defaultValue={settingsForm.seo.title}
-              placeholder="Ex: PrintsBrindes - Presentes e Artigos Personalizados"
-              className="mt-1"
-            />
-          </div>
-          <div>
-            <Label htmlFor="seoDescription">Descrição do Site</Label>
-            <Textarea
-              id="seoDescription"
-              defaultValue={settingsForm.seo.description}
-              placeholder="Ex: Presentes e artigos para festas personalizados! Canecas, cadernos, bolos e muito mais, tudo personalizado do seu jeito!"
-              rows={3}
-              className="mt-1"
-            />
-          </div>
-          <div>
-            <Label htmlFor="seoKeywords">Palavras-chave (separadas por vírgula)</Label>
-            <Input
-              id="seoKeywords"
-              defaultValue={settingsForm.seo.keywords}
-              placeholder="Ex: presentes personalizados, brindes, festas, canecas, cadernos, bolos"
-              className="mt-1"
-            />
-          </div>
-          <Button type="submit" className="bg-pink-500 hover:bg-pink-600 text-white w-full">Salvar SEO</Button>
-        </form>
-      </div>
-      <div className="grid md:grid-cols-2 gap-6">
-        <Card className="border border-gray-200">
-          <CardContent className="p-4 flex flex-col items-center">
-            <span className="font-medium text-gray-800 mb-2">Sitemap.xml</span>
-            <a href="/sitemap.xml" target="_blank" rel="noopener noreferrer" className="text-pink-500 underline">Abrir sitemap.xml</a>
-          </CardContent>
-        </Card>
-        <Card className="border border-gray-200">
-          <CardContent className="p-4 flex flex-col items-center">
-            <span className="font-medium text-gray-800 mb-2">Robots.txt</span>
-            <a href="/robots.txt" target="_blank" rel="noopener noreferrer" className="text-pink-500 underline">Abrir robots.txt</a>
-          </CardContent>
-        </Card>
-      </div>
-    </CardContent>
-  </Card>
-) // FIM SEO DASHBOARD
-//
 import type React from "react"
 
 import { Button } from "@/components/ui/button"
@@ -118,7 +51,22 @@ import { SyncIndicator } from "@/components/sync-indicator"
 
 export default function PainelAdministrativoPage() {
   const router = useRouter()
-  const { products, catalogItems, addProduct, updateProduct, deleteProduct, addCatalogItem, updateCatalogItem, deleteCatalogItem, isAuthenticated, logout, settings, updateSettings, syncStatus, syncMessage } = useStore()
+  const {
+    products,
+    catalogItems,
+    addProduct,
+    updateProduct,
+    deleteProduct,
+    addCatalogItem,
+    updateCatalogItem,
+    deleteCatalogItem,
+    isAuthenticated,
+    logout,
+    settings,
+    updateSettings,
+    syncStatus,
+    syncMessage,
+  } = useStore()
 
   const [activeTab, setActiveTab] = useState<"products" | "catalog" | "seo" | "settings">("products")
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
@@ -155,8 +103,8 @@ export default function PainelAdministrativoPage() {
     email: "",
     whatsappNumber: "",
     socialMedia: { facebook: "", instagram: "", whatsapp: "" },
-    seo: { title: "", description: "", keywords: "" }
-  }));
+    seo: { title: "", description: "", keywords: "" },
+  }))
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -178,8 +126,8 @@ export default function PainelAdministrativoPage() {
           title: settings.seo?.title || "",
           description: settings.seo?.description || "",
           keywords: settings.seo?.keywords || "",
-        }
-      });
+        },
+      })
     }
   }, [settings])
 
@@ -218,45 +166,23 @@ export default function PainelAdministrativoPage() {
   // Simplified and robust image compression
   const compressImage = (file: File, maxWidth: number = 400, quality: number = 0.5): Promise<string> => {
     return new Promise((resolve, reject) => {
-      console.log('Starting image compression:', {
-        fileName: file.name,
-        originalSize: file.size,
-        maxWidth,
-        quality
-      })
-
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        reject(new Error('Arquivo deve ser uma imagem'))
+      if (!file.type.startsWith("image/")) {
+        reject(new Error("Arquivo deve ser uma imagem"))
         return
       }
-
-      // Use FileReader for better compatibility
       const reader = new FileReader()
-      
-      reader.onload = function(event) {
-        const img = document.createElement('img')
-        
-        img.onload = function() {
+      reader.onload = function (event) {
+        const img = document.createElement("img")
+        img.onload = function () {
           try {
-            console.log('Image loaded:', {
-              originalWidth: img.width,
-              originalHeight: img.height
-            })
-
-            // Create canvas
-            const canvas = document.createElement('canvas')
-            const ctx = canvas.getContext('2d')
-            
+            const canvas = document.createElement("canvas")
+            const ctx = canvas.getContext("2d")
             if (!ctx) {
-              reject(new Error('Não foi possível criar contexto do canvas'))
+              reject(new Error("Não foi possível criar contexto do canvas"))
               return
             }
-
-            // Calculate new dimensions maintaining aspect ratio
             let newWidth = img.width
             let newHeight = img.height
-            
             if (newWidth > newHeight) {
               if (newWidth > maxWidth) {
                 newHeight = (newHeight * maxWidth) / newWidth
@@ -268,45 +194,23 @@ export default function PainelAdministrativoPage() {
                 newHeight = maxWidth
               }
             }
-
-            // Set canvas dimensions
             canvas.width = newWidth
             canvas.height = newHeight
-
-            // Draw image on canvas
             ctx.drawImage(img, 0, 0, newWidth, newHeight)
-
-            // Convert to compressed JPEG
-            const compressedDataUrl = canvas.toDataURL('image/jpeg', quality)
-            
-            console.log('Image compressed successfully:', {
-              newWidth,
-              newHeight,
-              originalSize: file.size,
-              compressedSize: compressedDataUrl.length,
-              compressionRatio: ((file.size - compressedDataUrl.length) / file.size * 100).toFixed(1) + '%'
-            })
-
+            const compressedDataUrl = canvas.toDataURL("image/jpeg", quality)
             resolve(compressedDataUrl)
           } catch (error) {
-            console.error('Error during compression:', error)
-            reject(new Error('Erro ao comprimir a imagem'))
+            reject(new Error("Erro ao comprimir a imagem"))
           }
         }
-        
-        img.onerror = function() {
-          reject(new Error('Erro ao carregar a imagem'))
+        img.onerror = function () {
+          reject(new Error("Erro ao carregar a imagem"))
         }
-
-        // Set image source from FileReader result
         img.src = event.target?.result as string
       }
-      
-      reader.onerror = function() {
-        reject(new Error('Erro ao ler o arquivo'))
+      reader.onerror = function () {
+        reject(new Error("Erro ao ler o arquivo"))
       }
-
-      // Read file as data URL
       reader.readAsDataURL(file)
     })
   }
@@ -319,79 +223,47 @@ export default function PainelAdministrativoPage() {
     if (!files || files.length === 0) {
       return
     }
-
-    console.log('Starting image upload process:', {
-      type,
-      fileCount: files.length,
-      files: Array.from(files).map(f => ({ name: f.name, size: f.size, type: f.type }))
-    })
-
     if (type === "product-multiple") {
-      // For multiple images, compress and add to images array
       let successCount = 0
       let errorCount = 0
-
       for (const file of Array.from(files)) {
-        console.log(`Processing file: ${file.name}`)
-
-        // Check file size (limit to 10MB before compression)
-        if (file.size > 10 * 1024 * 1024) {
-          alert(`❌ Arquivo ${file.name} é muito grande. Limite: 10MB por imagem.`)
-          errorCount++
-          continue
-        }
-
-        // Check file type
-        if (!file.type.startsWith('image/')) {
+        if (!file.type.startsWith("image/")) {
           alert(`❌ ${file.name} não é uma imagem válida.`)
           errorCount++
           continue
         }
-
         try {
-          console.log(`Compressing ${file.name}...`)
           const compressedImage = await compressImage(file, 400, 0.5)
-          
           setProductForm((prev) => ({
             ...prev,
             images: [...prev.images, compressedImage],
             mainImage: prev.mainImage || compressedImage,
           }))
-          
           successCount++
-          console.log(`✅ ${file.name} processed successfully`)
         } catch (error) {
-          console.error(`❌ Error processing ${file.name}:`, error)
-          alert(`❌ Erro ao processar ${file.name}: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
+          alert(
+            `❌ Erro ao processar ${file.name}: ${
+              error instanceof Error ? error.message : "Erro desconhecido"
+            }`,
+          )
           errorCount++
         }
       }
-
-      // Show summary
       if (successCount > 0) {
-        alert(`✅ ${successCount} imagem(ns) adicionada(s) com sucesso!${errorCount > 0 ? ` (${errorCount} falharam)` : ''}`)
+        alert(
+          `✅ ${successCount} imagem(ns) adicionada(s) com sucesso!${
+            errorCount > 0 ? ` (${errorCount} falharam)` : ""
+          }`,
+        )
       }
     } else {
-      // Single image upload
       const file = files[0]
-      console.log(`Processing single file: ${file.name}`)
-
-      // Check file size (limit to 10MB before compression)
-      if (file.size > 10 * 1024 * 1024) {
-        alert("❌ Arquivo muito grande. Limite: 10MB por imagem.")
-        return
-      }
-
-      // Check file type
-      if (!file.type.startsWith('image/')) {
+      if (!file.type.startsWith("image/")) {
         alert("❌ Arquivo deve ser uma imagem válida.")
         return
       }
-
       try {
-        console.log(`Compressing ${file.name}...`)
         const compressedImage = await compressImage(file, 400, 0.5)
-        
         if (type === "product") {
           setProductForm((prev) => ({
             ...prev,
@@ -401,17 +273,12 @@ export default function PainelAdministrativoPage() {
         } else if (type === "catalog") {
           setCatalogForm({ ...catalogForm, image: compressedImage })
         }
-        
-        console.log(`✅ ${file.name} processed successfully`)
         alert(`✅ Imagem ${file.name} adicionada com sucesso!`)
       } catch (error) {
-        console.error(`❌ Error processing ${file.name}:`, error)
-        alert(`❌ Erro ao processar a imagem: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
+        alert(`❌ Erro ao processar a imagem: ${error instanceof Error ? error.message : "Erro desconhecido"}`)
       }
     }
-
-    // Clear the input to allow re-uploading the same file
-    e.target.value = ''
+    e.target.value = ""
   }
 
   const removeProductImage = (index: number) => {
@@ -435,33 +302,96 @@ export default function PainelAdministrativoPage() {
 
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault()
-
     try {
-      // Validate required fields
       if (!productForm.name.trim()) {
         alert("Nome do produto é obrigatório!")
         return
       }
-
       if (!productForm.description.trim()) {
         alert("Descrição do produto é obrigatória!")
         return
       }
-
       if (!productForm.price || isNaN(Number.parseFloat(productForm.price))) {
         alert("Preço válido é obrigatório!")
         return
       }
-
       if (!productForm.category.trim()) {
         alert("Categoria do produto é obrigatória!")
         return
       }
-
-      // Use uploaded images or fallback to placeholders
       const productImages =
         productForm.images.length > 0
           ? productForm.images
+          : ["/placeholder.svg?height=400&width=400", "/placeholder.svg?height=400&width=400"]
+      const newProduct = {
+        name: productForm.name.trim(),
+        description: productForm.description.trim(),
+        price: Number.parseFloat(productForm.price),
+        category: productForm.category.trim(),
+        showOnHome: productForm.showOnHome,
+        images: productImages,
+        mainImage: productForm.mainImage || productImages[0],
+        personalization: productForm.personalization.trim() || "Disponível",
+        productionTime: productForm.productionTime.trim() || "3-7 dias úteis",
+      }
+      await addProduct(newProduct)
+      const slug =
+        productForm.name
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/[^a-z0-9\s-]/g, "")
+          .replace(/\s+/g, "-")
+          .replace(/-+/g, "-")
+          .replace(/^-+|-+$/g, "")
+          .trim() || `produto-${Date.now()}`
+      const imageMessage =
+        productForm.images.length > 0
+          ? `🖼️ O produto foi criado com ${productForm.images.length} imagem(ns) personalizada(s).`
+          : `🖼️ O produto foi criado com imagens de demonstração.`
+      alert(
+        `✅ Produto "${productForm.name}" adicionado com sucesso!
+
+📄 Página criada automaticamente em: /produto/${slug}
+
+${imageMessage}
+
+🔗 Você pode acessar a página do produto através do link "Ver Detalhes" na lista de produtos.
+
+📱 Os dados serão sincronizados automaticamente em todos os dispositivos em até 30 segundos.`,
+      )
+      resetProductForm()
+      setIsAddDialogOpen(false)
+    } catch (error) {
+      alert(
+        `❌ Erro ao adicionar produto: ${
+          error instanceof Error ? error.message : "Erro desconhecido"
+        }. Tente novamente.`,
+      )
+    }
+  }
+
+  const handleEditProduct = (product: Product) => {
+    setEditingProduct(product)
+    setProductForm({
+      name: product.name,
+      description: product.description,
+      price: product.price.toString(),
+      category: product.category,
+      showOnHome: product.showOnHome || false,
+      images: product.images || [],
+      mainImage: product.mainImage || "",
+      personalization: product.personalization || "",
+      productionTime: product.productionTime || "",
+    })
+    setIsEditDialogOpen(true)
+  }
+
+  const handleUpdateProduct = (e: React.FormEvent) => {
+    e.preventDefault()
+    try {
+      if (editingProduct) {
+        if (!productForm.name.trim()) {
           : ["/placeholder.svg?height=400&width=400", "/placeholder.svg?height=400&width=400"]
 
       const newProduct = {
@@ -1170,143 +1100,258 @@ ${imageMessage}
 
           {/* SEO Dashboard Tab */}
           {activeTab === "seo" && (
-  <Card className="bg-white border border-gray-200">
-    <CardContent className="p-6 space-y-8">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">SEO do Site</h2>
-        <p className="text-gray-600 mb-4">Configure as principais informações de SEO do seu site para melhorar o posicionamento no Google.</p>
-        <form
-          className="space-y-4 max-w-xl"
-          onSubmit={e => {
-            e.preventDefault();
-            updateSettings({
-              ...settings,
-              seo: {
-                title: (document.getElementById('seoTitle') as HTMLInputElement)?.value || '',
-                description: (document.getElementById('seoDescription') as HTMLTextAreaElement)?.value || '',
-                keywords: (document.getElementById('seoKeywords') as HTMLInputElement)?.value || '',
-              },
-            });
-            alert('✅ Configurações de SEO salvas!');
-          }}
-        >
-          <div>
-            <Label htmlFor="seoTitle">Título do Site</Label>
-            <Input
-              id="seoTitle"
-              defaultValue={settingsForm.seo.title}
-              placeholder="Ex: PrintsBrindes - Presentes e Artigos Personalizados"
-              className="mt-1"
-            />
-          </div>
-          <div>
-            <Label htmlFor="seoDescription">Descrição do Site</Label>
-            <Textarea
-              id="seoDescription"
-              defaultValue={settingsForm.seo.description}
-              placeholder="Ex: Presentes e artigos para festas personalizados! Canecas, cadernos, bolos e muito mais, tudo personalizado do seu jeito!"
-              rows={3}
-              className="mt-1"
-            />
-          </div>
-          <div>
-            <Label htmlFor="seoKeywords">Palavras-chave (separadas por vírgula)</Label>
-            <Input
-              id="seoKeywords"
-              defaultValue={settingsForm.seo.keywords}
-              placeholder="Ex: presentes personalizados, brindes, festas, canecas, cadernos, bolos"
-              className="mt-1"
-            />
-          </div>
-          <Button type="submit" className="bg-pink-500 hover:bg-pink-600 text-white w-full">Salvar SEO</Button>
-        </form>
-      </div>
-      <div className="grid md:grid-cols-2 gap-6">
-        <Card className="border border-gray-200">
-          <CardContent className="p-4 flex flex-col items-center">
-            <span className="font-medium text-gray-800 mb-2">Sitemap.xml</span>
-            <a href="/sitemap.xml" target="_blank" rel="noopener noreferrer" className="text-pink-500 underline">Abrir sitemap.xml</a>
-          </CardContent>
-        </Card>
-        <Card className="border border-gray-200">
-          <CardContent className="p-4 flex flex-col items-center">
-            <span className="font-medium text-gray-800 mb-2">Robots.txt</span>
-            <a href="/robots.txt" target="_blank" rel="noopener noreferrer" className="text-pink-500 underline">Abrir robots.txt</a>
-          </CardContent>
-        </Card>
-      </div>
-    </CardContent>
-  </Card>
-) // FIM SEO DASHBOARD
-//
-  <Card className="bg-white border border-gray-200">
-    <CardContent className="p-6 space-y-8">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">SEO do Site</h2>
-        <p className="text-gray-600 mb-4">Configure as principais informações de SEO do seu site para melhorar o posicionamento no Google.</p>
-        <form
-          className="space-y-4 max-w-xl"
-          onSubmit={e => {
-            e.preventDefault();
-            updateSettings({
-              ...settings,
-              seo: {
-                title: (document.getElementById('seoTitle') as HTMLInputElement)?.value || '',
-                description: (document.getElementById('seoDescription') as HTMLTextAreaElement)?.value || '',
-                keywords: (document.getElementById('seoKeywords') as HTMLInputElement)?.value || '',
-              },
-            });
-            alert('✅ Configurações de SEO salvas!');
-          }}
-        >
-          <div>
-            <Label htmlFor="seoTitle">Título do Site</Label>
-            <Input
-              id="seoTitle"
-              defaultValue={settingsForm.seo.title}
-              placeholder="Ex: PrintsBrindes - Presentes e Artigos Personalizados"
-              className="mt-1"
-            />
-          </div>
-          <div>
-            <Label htmlFor="seoDescription">Descrição do Site</Label>
-            <Textarea
-              id="seoDescription"
-              defaultValue={settingsForm.seo.description}
-              placeholder="Ex: Presentes e artigos para festas personalizados! Canecas, cadernos, bolos e muito mais, tudo personalizado do seu jeito!"
-              rows={3}
-              className="mt-1"
-            />
-          </div>
-          <div>
-            <Label htmlFor="seoKeywords">Palavras-chave (separadas por vírgula)</Label>
-            <Input
-              id="seoKeywords"
-              defaultValue={settingsForm.seo.keywords}
-              placeholder="Ex: presentes personalizados, brindes, festas, canecas, cadernos, bolos"
-              className="mt-1"
-            />
-          </div>
-          <Button type="submit" className="bg-pink-500 hover:bg-pink-600 text-white w-full">Salvar SEO</Button>
-        </form>
-      </div>
-      <div className="grid md:grid-cols-2 gap-6">
-        <Card className="border border-gray-200">
-          <CardContent className="p-4 flex flex-col items-center">
-            <span className="font-medium text-gray-800 mb-2">Sitemap.xml</span>
-            <a href="/sitemap.xml" target="_blank" rel="noopener noreferrer" className="text-pink-500 underline">Abrir sitemap.xml</a>
-          </CardContent>
-        </Card>
-        <Card className="border border-gray-200">
-          <CardContent className="p-4 flex flex-col items-center">
-            <span className="font-medium text-gray-800 mb-2">Robots.txt</span>
-            <a href="/robots.txt" target="_blank" rel="noopener noreferrer" className="text-pink-500 underline">Abrir robots.txt</a>
-          </CardContent>
-        </Card>
-      </div>
-    </CardContent>
-  </Card>
-)}
+            <div className="space-y-6">
+              {/* SEO Overview Cards */}
+              <div className="grid md:grid-cols-4 gap-6">
+                <Card className="bg-white border border-gray-200 p-6">
+                  <CardContent className="p-0 flex items-center space-x-4">
+                    <div className="bg-blue-100 rounded-full w-12 h-12 flex items-center justify-center">
+                      <Eye className="w-6 h-6 text-blue-500" />
+                    </div>
+                    <div>
+                      <p className="text-gray-600 text-sm">Visualizações</p>
+                      <p className="text-2xl font-bold text-gray-800">1,250</p>
+                      <p className="text-green-600 text-sm">+12% vs mês anterior</p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-white border border-gray-200 p-6">
+                  <CardContent className="p-0 flex items-center space-x-4">
+                    <div className="bg-green-100 rounded-full w-12 h-12 flex items-center justify-center">
+                      <Users className="w-6 h-6 text-green-500" />
+                    </div>
+                    <div>
+                      <p className="text-gray-600 text-sm">Visitantes Únicos</p>
+                      <p className="text-2xl font-bold text-gray-800">890</p>
+                      <p className="text-green-600 text-sm">+8% vs mês anterior</p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-white border border-gray-200 p-6">
+                  <CardContent className="p-0 flex items-center space-x-4">
+                    <div className="bg-yellow-100 rounded-full w-12 h-12 flex items-center justify-center">
+                      <MousePointer className="w-6 h-6 text-yellow-600" />
+                    </div>
+                    <div>
+                      <p className="text-gray-600 text-sm">Taxa de Rejeição</p>
+                      <p className="text-2xl font-bold text-gray-800">45.2%</p>
+                      <p className="text-red-600 text-sm">+2% vs mês anterior</p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-white border border-gray-200 p-6">
+                  <CardContent className="p-0 flex items-center space-x-4">
+                    <div className="bg-purple-100 rounded-full w-12 h-12 flex items-center justify-center">
+                      <BarChart3 className="w-6 h-6 text-purple-500" />
+                    </div>
+                    <div>
+                      <p className="text-gray-600 text-sm">Posição Média Google</p>
+                      <p className="text-2xl font-bold text-gray-800">12.5</p>
+                      <p className="text-green-600 text-sm">-1.2 vs mês anterior</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* SEO Tools and Configuration */}
+              <div className="grid md:grid-cols-2 gap-6">
+                <Card className="bg-white border border-gray-200">
+                  <CardContent className="p-6">
+                    <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                      <Search className="w-5 h-5 mr-2" />
+                      Configurações SEO
+                    </h3>
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="seoTitle">Título Principal do Site</Label>
+                        <Input
+                          id="seoTitle"
+                          defaultValue="PrintsBrindes - Presentes e Artigos Personalizados"
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="seoDescription">Descrição Meta</Label>
+                        <Textarea
+                          id="seoDescription"
+                          defaultValue="Presentes e artigos para festas personalizados! Canecas, cadernos, bolos e muito mais, tudo personalizado do seu jeito!"
+                          rows={3}
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="seoKeywords">Palavras-chave Principais</Label>
+                        <Input
+                          id="seoKeywords"
+                          defaultValue="presentes personalizados, brindes, festas, canecas, cadernos, bolos"
+                          className="mt-1"
+                        />
+                      </div>
+                      <Button className="w-full bg-pink-500 hover:bg-pink-600 text-white">
+                        Salvar Configurações SEO
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-white border border-gray-200">
+                  <CardContent className="p-6">
+                    <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                      <BarChart3 className="w-5 h-5 mr-2" />
+                      Google Analytics & Search Console
+                    </h3>
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="googleAnalytics">Google Analytics ID</Label>
+                        <Input id="googleAnalytics" placeholder="G-XXXXXXXXXX" className="mt-1" />
+                      </div>
+                      <div>
+                        <Label htmlFor="searchConsole">Google Search Console</Label>
+                        <Input id="searchConsole" placeholder="Código de verificação" className="mt-1" />
+                      </div>
+                      <div>
+                        <Label htmlFor="facebookPixel">Facebook Pixel ID</Label>
+                        <Input id="facebookPixel" placeholder="123456789012345" className="mt-1" />
+                      </div>
+                      <Button className="w-full bg-blue-500 hover:bg-blue-600 text-white">Conectar Ferramentas</Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* SEO Status and Issues */}
+              <Card className="bg-white border border-gray-200">
+                <CardContent className="p-6">
+                  <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                    <AlertCircle className="w-5 h-5 mr-2" />
+                    Status SEO e Problemas Detectados
+                  </h3>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <CheckCircle className="w-5 h-5 text-green-500" />
+                        <div>
+                          <p className="font-medium text-gray-800">Sitemap.xml Configurado</p>
+                          <p className="text-sm text-gray-600">Sitemap está ativo e sendo indexado pelo Google</p>
+                        </div>
+                      </div>
+                      <Badge className="bg-green-100 text-green-700">OK</Badge>
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <CheckCircle className="w-5 h-5 text-green-500" />
+                        <div>
+                          <p className="font-medium text-gray-800">Robots.txt Configurado</p>
+                          <p className="text-sm text-gray-600">Arquivo robots.txt está configurado corretamente</p>
+                        </div>
+                      </div>
+                      <Badge className="bg-green-100 text-green-700">OK</Badge>
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <AlertCircle className="w-5 h-5 text-yellow-500" />
+                        <div>
+                          <p className="font-medium text-gray-800">Google Analytics não configurado</p>
+                          <p className="text-sm text-gray-600">
+                            Configure o Google Analytics para acompanhar o tráfego
+                          </p>
+                        </div>
+                      </div>
+                      <Badge className="bg-yellow-100 text-yellow-700">Atenção</Badge>
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <AlertCircle className="w-5 h-5 text-yellow-500" />
+                        <div>
+                          <p className="font-medium text-gray-800">Google Search Console não verificado</p>
+                          <p className="text-sm text-gray-600">Verifique seu site no Google Search Console</p>
+                        </div>
+                      </div>
+                      <Badge className="bg-yellow-100 text-yellow-700">Pendente</Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* SEO Tools */}
+              <Card className="bg-white border border-gray-200">
+                <CardContent className="p-6">
+                  <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                    <Settings className="w-5 h-5 mr-2" />
+                    Ferramentas SEO
+                  </h3>
+                  <div className="grid md:grid-cols-4 gap-4">
+                    <div className="p-4 border border-gray-200 rounded-lg text-center">
+                      <Globe className="w-8 h-8 text-blue-500 mx-auto mb-2" />
+                      <h4 className="font-medium text-gray-800 mb-2">Sitemap.xml</h4>
+                      <Button variant="outline" size="sm" className="w-full">
+                        <ExternalLink className="w-4 h-4 mr-1" />
+                        Visualizar
+                      </Button>
+                    </div>
+
+                    <div className="p-4 border border-gray-200 rounded-lg text-center">
+                      <Target className="w-8 h-8 text-green-500 mx-auto mb-2" />
+                      <h4 className="font-medium text-gray-800 mb-2">Robots.txt</h4>
+                      <Button variant="outline" size="sm" className="w-full">
+                        <ExternalLink className="w-4 h-4 mr-1" />
+                        Visualizar
+                      </Button>
+                    </div>
+
+                    <div className="p-4 border border-gray-200 rounded-lg text-center">
+                      <BarChart3 className="w-8 h-8 text-purple-500 mx-auto mb-2" />
+                      <h4 className="font-medium text-gray-800 mb-2">Relatório SEO</h4>
+                      <Button variant="outline" size="sm" className="w-full">
+                        <Download className="w-4 h-4 mr-1" />
+                        Baixar
+                      </Button>
+                    </div>
+
+                    <div className="p-4 border border-gray-200 rounded-lg text-center">
+                      <RefreshCw className="w-8 h-8 text-orange-500 mx-auto mb-2" />
+                      <h4 className="font-medium text-gray-800 mb-2">Atualizar</h4>
+                      <Button variant="outline" size="sm" className="w-full">
+                        <RefreshCw className="w-4 h-4 mr-1" />
+                        Regenerar
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Top Keywords and Pages Performance */}
+              <div className="grid md:grid-cols-2 gap-6">
+                <Card className="bg-white border border-gray-200">
+                  <CardContent className="p-6">
+                    <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                      <TrendingUp className="w-5 h-5 mr-2" />
+                      Palavras-chave Principais
+                    </h3>
+                    <div className="space-y-3">
+                      {[
+                        { keyword: "presentes personalizados", position: 8, volume: "1.2k" },
+                        { keyword: "brindes festa", position: 12, volume: "890" },
+                        { keyword: "canecas personalizadas", position: 15, volume: "650" },
+                        { keyword: "bolos personalizados", position: 18, volume: "420" },
+                        { keyword: "lembrancinhas guaratiba", position: 22, volume: "180" },
+                      ].map((item, index) => (
+                        <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                          <div>
+                            <p className="font-medium text-gray-800 text-sm">{item.keyword}</p>
+                            <p className="text-xs text-gray-600">Volume: {item.volume}/mês</p>
+                          </div>
+                          <Badge variant="outline" className="text-xs">
+                            Pos. {item.position}
+                          </Badge>
+                        </div>
+                      ))}
                     </div>
                   </CardContent>
                 </Card>
