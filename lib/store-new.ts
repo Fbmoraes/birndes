@@ -43,6 +43,13 @@ export interface Settings {
     instagram: string
     whatsapp: string
   }
+  siteTitle: string
+  siteDescription: string
+  keywords: string
+  customDomain: string
+  googleAnalyticsId?: string
+  googleSearchConsoleId?: string
+  facebookPixelId?: string
 }
 
 interface Store {

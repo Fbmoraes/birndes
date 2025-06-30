@@ -7,16 +7,8 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
-  Search,
-  TrendingUp,
   Globe,
-  Users,
-  MousePointer,
-  BarChart3,
   Target,
-  CheckCircle,
-  AlertCircle,
-  XCircle,
   ExternalLink,
   Copy,
   Download,
@@ -29,83 +21,98 @@ import {
   Star,
 } from "lucide-react"
 import Image from "next/image"
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { useStore } from "@/lib/store-new"
-import type { SEOSettings, PageData, BadgeVariant, AnalyticsData, SEOData } from "./types"
+
+async function fetchSEOSettings() {
+  const res = await fetch("/api/settings")
+  if (!res.ok) throw new Error("Erro ao buscar configurações")
+  return res.json()
+}
+
+async function saveSEOSettings(settings: any) {
+  const res = await fetch("/api/settings", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(settings),
+  })
+  if (!res.ok) throw new Error("Erro ao salvar configurações")
+  return res.json()
+}
 
 export default function SEODashboard() {
   const router = useRouter()
-  const { isAuthenticated, updateSettings, products, cartItems } = useStore()
   const [activeTab, setActiveTab] = useState("overview")
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const [lastUpdate, setLastUpdate] = useState<string>("")
+  const [isAuthenticated, setIsAuthenticated] = useState(true) // mock
 
-  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null)
-  const [seoData, setSeoData] = useState<SEOData | null>(null)
+  // Mock de dados de analytics e SEO
+  const [analyticsData, setAnalyticsData] = useState<any>(null)
+  const [seoData, setSeoData] = useState<any>(null)
 
   const [seoSettings, setSeoSettings] = useState({
-    siteTitle: "PrintsBrindes - Presentes e Artigos Personalizados",
-    siteDescription:
-      "Presentes e artigos para festas personalizados! Canecas, cadernos, bolos e muito mais, tudo personalizado do seu jeito!",
-    keywords:
-      "presentes personalizados, brindes, festas, canecas, cadernos, bolos, personalização, Guaratiba, Rio de Janeiro",
+    siteTitle: "",
+    siteDescription: "",
+    keywords: "",
     googleAnalyticsId: "",
     googleSearchConsoleId: "",
     facebookPixelId: "",
-    customDomain: "printsbrindes.com.br",
+    customDomain: "",
   })
+  const [loadingSettings, setLoadingSettings] = useState(true)
 
-  // Calcular valor total dos produtos (simulando vendas via WhatsApp)
-  const totalProductValue = products.reduce((sum, product) => sum + product.price, 0)
-  const cartValue = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
-
-  // Função para buscar dados reais de analytics
+  // Mock para simular atualização de dados
   const fetchAnalyticsData = async () => {
-    try {
-      setIsLoading(true)
-      const response = await fetch('/api/analytics?type=all', {
-        method: 'GET',
-        headers: {
-          'Cache-Control': 'no-cache',
+    setIsLoading(true)
+    setTimeout(() => {
+      setAnalyticsData({ uniqueVisitors: 1000 })
+      setSeoData({
+        whatsappSales: {
+          totalOrders: 25,
+          totalRevenue: 3500,
+          avgResponseTime: "2m 10s",
+          avgOrderValue: 140,
         },
+        localSEO: {
+          googleMyBusinessViews: 1200,
+          reviews: { averageRating: 4.8, total: 57 },
+          localRankings: [
+            { keyword: "caneca personalizada", position: 2 },
+            { keyword: "brindes rio de janeiro", position: 5 },
+          ],
+        },
+        mobilePerformance: {
+          mobileTrafficPercentage: 78,
+          pageLoadTime: 2.1,
+        },
+        technicalIssues: [
+          { type: "success", priority: "low", title: "Meta description presente", description: "Sua página inicial possui meta description." },
+          { type: "warning", priority: "medium", title: "Título duplicado", description: "Algumas páginas possuem títulos duplicados." },
+          { type: "error", priority: "high", title: "Robots.txt ausente", description: "O arquivo robots.txt não foi encontrado." },
+        ],
       })
-
-      if (response.ok) {
-        const result = await response.json()
-        if (result.success) {
-          setAnalyticsData(result.data.analytics)
-          setSeoData(result.data.seo)
-          setLastUpdate(new Date().toLocaleString('pt-BR'))
-        }
-      }
-    } catch (error) {
-      console.error('Erro ao buscar dados de analytics:', error)
-    } finally {
+      setLastUpdate(new Date().toLocaleString('pt-BR'))
       setIsLoading(false)
-    }
+    }, 800)
   }
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push("/area-administrativa")
-    } else {
-      fetchAnalyticsData()
-    }
-  }, [isAuthenticated, router])
+    fetchAnalyticsData()
+  }, [])
 
-  // Atualizar dados a cada 5 minutos
   useEffect(() => {
-    const interval = setInterval(fetchAnalyticsData, 5 * 60 * 1000)
-    return () => clearInterval(interval)
+    fetchSEOSettings()
+      .then(data => setSeoSettings(data))
+      .finally(() => setLoadingSettings(false))
   }, [])
 
   const handleSaveSEOSettings = async () => {
     try {
-      await updateSettings({})
+      await saveSEOSettings(seoSettings)
       alert("✅ Configurações de SEO salvas com sucesso!")
-    } catch (error) {
-      alert("❌ Erro ao salvar configurações. Tente novamente.")
+    } catch {
+      alert("❌ Erro ao salvar configurações.")
     }
   }
 
@@ -115,12 +122,7 @@ export default function SEODashboard() {
   }
 
   const generateSitemap = async () => {
-    try {
-      await fetch('/api/sitemap/generate', { method: 'POST' })
-      alert("✅ Sitemap regenerado com sucesso!")
-    } catch (error) {
-      alert("❌ Erro ao regenerar sitemap.")
-    }
+    alert("✅ Sitemap regenerado (mock)!")
   }
 
   const handleRefreshData = () => {
@@ -128,7 +130,7 @@ export default function SEODashboard() {
   }
 
   const handleConnectTools = () => {
-    alert("🔗 IDs salvos localmente! (Persistência real depende do backend aceitar esses campos)")
+    alert("🔗 IDs salvos localmente! (Mock, sem persistência real)")
   }
 
   if (!isAuthenticated) {
@@ -145,33 +147,6 @@ export default function SEODashboard() {
       </div>
     )
   }
-
-  const getBadgeVariant = (status: PageData['status']): BadgeVariant => {
-    switch (status) {
-      case 'good':
-        return 'default'
-      case 'warning':
-        return 'secondary'
-      case 'error':
-        return 'destructive'
-      default:
-        return 'default'
-    }
-  }
-
-  const pageData: PageData[] = [
-    { page: "/", views: 450, bounce: "42%", time: "3m 12s", status: "good" },
-    { page: "/produtos", views: 320, bounce: "38%", time: "4m 05s", status: "good" },
-    {
-      page: "/produto/relogio-personalizado",
-      views: 180,
-      bounce: "35%",
-      time: "2m 45s",
-      status: "warning",
-    },
-    { page: "/sobre-nos", views: 100, bounce: "55%", time: "1m 30s", status: "error" },
-    { page: "/contato", views: 85, bounce: "25%", time: "2m 10s", status: "good" },
-  ]
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-pink-50 to-white">
@@ -347,7 +322,7 @@ export default function SEODashboard() {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-4">
-                        {seoData?.localSEO.localRankings.map((ranking, index) => (
+                        {seoData?.localSEO.localRankings.map((ranking: any, index: number) => (
                           <div key={index} className="flex justify-between items-center">
                             <span className="text-gray-600">{ranking.keyword}</span>
                             <Badge variant={ranking.position <= 3 ? "default" : "secondary"}>
@@ -554,9 +529,11 @@ export default function SEODashboard() {
                             <Copy className="w-4 h-4 mr-1" />
                             Copiar URL
                           </Button>
-                          <Button variant="outline" size="sm">
-                            <ExternalLink className="w-4 h-4 mr-1" />
-                            Visualizar
+                          <Button asChild variant="outline" size="sm">
+                            <a href="https://printsbrindes.com.br/robots.txt" target="_blank" rel="noopener noreferrer">
+                              <ExternalLink className="w-4 h-4 mr-1" />
+                              Visualizar
+                            </a>
                           </Button>
                         </div>
                       </div>
@@ -565,11 +542,11 @@ export default function SEODashboard() {
                         <Download className="w-8 h-8 text-purple-500 mx-auto mb-2" />
                         <h3 className="font-medium text-gray-800 mb-2">Relatório SEO</h3>
                         <div className="space-y-2">
-                          <Button variant="outline" size="sm">
+                          <Button variant="outline" size="sm" onClick={() => alert("Download do PDF (mock)")}>
                             <Download className="w-4 h-4 mr-1" />
                             Baixar PDF
                           </Button>
-                          <Button variant="outline" size="sm">
+                          <Button variant="outline" size="sm" onClick={() => alert("Compartilhar relatório (mock)")}>
                             <ExternalLink className="w-4 h-4 mr-1" />
                             Compartilhar
                           </Button>
