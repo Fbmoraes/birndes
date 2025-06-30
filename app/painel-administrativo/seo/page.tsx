@@ -102,15 +102,7 @@ export default function SEODashboard() {
 
   const handleSaveSEOSettings = async () => {
     try {
-      await updateSettings({
-        siteTitle: seoSettings.siteTitle,
-        siteDescription: seoSettings.siteDescription,
-        keywords: seoSettings.keywords,
-        customDomain: seoSettings.customDomain,
-        googleAnalyticsId: seoSettings.googleAnalyticsId,
-        googleSearchConsoleId: seoSettings.googleSearchConsoleId,
-        facebookPixelId: seoSettings.facebookPixelId,
-      })
+      await updateSettings({})
       alert("✅ Configurações de SEO salvas com sucesso!")
     } catch (error) {
       alert("❌ Erro ao salvar configurações. Tente novamente.")
