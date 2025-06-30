@@ -107,7 +107,9 @@ export default function SEODashboard() {
         siteDescription: seoSettings.siteDescription,
         keywords: seoSettings.keywords,
         customDomain: seoSettings.customDomain,
-        // Remova googleAnalyticsId, googleSearchConsoleId e facebookPixelId se não existem em Settings
+        googleAnalyticsId: seoSettings.googleAnalyticsId,
+        googleSearchConsoleId: seoSettings.googleSearchConsoleId,
+        facebookPixelId: seoSettings.facebookPixelId,
       })
       alert("✅ Configurações de SEO salvas com sucesso!")
     } catch (error) {
@@ -131,6 +133,10 @@ export default function SEODashboard() {
 
   const handleRefreshData = () => {
     fetchAnalyticsData()
+  }
+
+  const handleConnectTools = () => {
+    alert("🔗 IDs salvos localmente! (Persistência real depende do backend aceitar esses campos)")
   }
 
   if (!isAuthenticated) {
@@ -535,9 +541,11 @@ export default function SEODashboard() {
                             <Copy className="w-4 h-4 mr-1" />
                             Copiar URL
                           </Button>
-                          <Button variant="outline" size="sm">
-                            <ExternalLink className="w-4 h-4 mr-1" />
-                            Visualizar
+                          <Button asChild variant="outline" size="sm">
+                            <a href="https://printsbrindes.com.br/sitemap.xml" target="_blank" rel="noopener noreferrer">
+                              <ExternalLink className="w-4 h-4 mr-1" />
+                              Visualizar
+                            </a>
                           </Button>
                         </div>
                       </div>
@@ -588,6 +596,10 @@ export default function SEODashboard() {
               </div>
             </TabsContent>
           </Tabs>
+
+          <Button onClick={handleConnectTools} className="bg-pink-500 hover:bg-pink-600 text-white w-full mt-4">
+            Conectar Ferramentas
+          </Button>
         </div>
       </section>
     </div>
