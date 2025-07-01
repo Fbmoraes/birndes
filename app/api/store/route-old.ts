@@ -183,158 +183,71 @@ export async function POST(request: NextRequest) {
 // PUT - Update existing item
 export async function PUT(request: NextRequest) {
   try {
-    console.log('PUT /api/store - Starting request')
-    
     // Check authentication for write operations
     if (!checkAuth(request)) {
-      console.log('PUT /api/store - Authentication failed')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    console.log('PUT /api/store - Authentication successful')
-
     const body = await request.json()
-    console.log('PUT /api/store - Request body:', { 
-      type: body.type, 
-      hasId: !!body.id,
-      hasItem: !!body.item,
-      itemKeys: body.item ? Object.keys(body.item) : []
-    })
-    
     const { type, id, item } = body
     
-    // Validate required fields based on type
-    if (!type || !item) {
-      console.error('PUT /api/store - Missing required fields (type or item)')
-      return NextResponse.json({ error: 'Missing required fields (type and item are required)' }, { status: 400 })
-    }
-
-    // For products and catalogItems, we need an ID
-    if ((type === 'products' || type === 'catalogItems') && !id) {
-      console.error('PUT /api/store - Missing ID for', type)
-      return NextResponse.json({ error: `Missing ID for ${type}` }, { status: 400 })
-    }
-
-    let success = false
-    
-    try {
-      if (type === 'products') {
-        console.log('PUT /api/store - Updating product:', id)
-        success = await DatabaseService.updateProduct(id, item)
-      } else if (type === 'catalogItems') {
-        console.log('PUT /api/store - Updating catalog item:', id)
-        success = await DatabaseService.updateCatalogItem(id, item)
-      } else if (type === 'settings') {
-        console.log('PUT /api/store - Updating settings:', Object.keys(item))
-        success = await DatabaseService.updateSettings(item)
-      } else {
-        console.error('PUT /api/store - Invalid type:', type)
-        return NextResponse.json({ error: 'Invalid type' }, { status: 400 })
-      }
-    } catch (updateError) {
-      console.error('PUT /api/store - Update operation failed:', updateError)
-      return NextResponse.json({ 
-        error: 'Update operation failed',
-        details: process.env.NODE_ENV === 'development' ? updateError : undefined
-      }, { status: 500 })
-    }
-    
-    if (!success) {
-      console.error('PUT /api/store - Update failed for type:', type)
-      return NextResponse.json({ error: 'Failed to update item' }, { status: 404 })
-    }
-
-    console.log('PUT /api/store - Update successful for type:', type)
-    
-    // Get updated data
-    const data = await DatabaseService.getAllData()
-    
-    const response = NextResponse.json({ 
-      success: true, 
-      data,
-      message: `${type} updated successfully`
-    })
-    response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate')
-    response.headers.set('Pragma', 'no-cache')
-    response.headers.set('Expires', '0')
-    
-    return response
-  } catch (error) {
-    console.error('PUT /api/store - Error details:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-      error
-    })
-    
-    const errorMessage = error instanceof Error ? error.message : 'Failed to update item'
-    return NextResponse.json({ 
-      error: errorMessage,
-      details: process.env.NODE_ENV === 'development' ? error : undefined
-    }, { status: 500 })
-  }
-}
-
-// DELETE - Remove item
-export async function DELETE(request: NextRequest) {
-  try {
-    console.log('DELETE /api/store - Starting request')
-    
-    // Check authentication for write operations
-    if (!checkAuth(request)) {
-      console.log('DELETE /api/store - Authentication failed')
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const body = await request.json()
-    console.log('DELETE /api/store - Request body:', { 
-      type: body.type, 
-      id: body.id 
-    })
-    
-    const { type, id } = body
-    
-    if (!type || !id) {
-      console.error('DELETE /api/store - Missing required fields')
+    if (!type || !id || !item) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
     let success = false
     
     if (type === 'products') {
-      console.log('DELETE /api/store - Deleting product:', id)
-      success = await DatabaseService.deleteProduct(id)
+      success = await DatabaseService.updateProduct(id, item)
     } else if (type === 'catalogItems') {
-      console.log('DELETE /api/store - Deleting catalog item:', id)
-      success = await DatabaseService.deleteCatalogItem(id)
-    } else {
-      console.error('DELETE /api/store - Invalid type:', type)
-      return NextResponse.json({ error: 'Invalid type' }, { status: 400 })
+      success = await DatabaseService.updateCatalogItem(id, item)
+    } else if (type === 'settings') {
+      success = await DatabaseService.updateSettings(item)
     }
     
     if (!success) {
-      console.error('DELETE /api/store - Delete failed for type:', type)
+      return NextResponse.json({ error: 'Failed to update item' }, { status: 404 })
+    }
+
+    const data = await DatabaseService.getAllData()
+    return NextResponse.json({ success: true, data })
+  } catch (error) {
+    console.error('Failed to update item:', error)
+    return NextResponse.json({ error: 'Failed to update item' }, { status: 500 })
+  }
+}
+
+// DELETE - Remove item
+export async function DELETE(request: NextRequest) {
+  try {
+    // Check authentication for write operations
+    if (!checkAuth(request)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const body = await request.json()
+    const { type, id } = body
+    
+    if (!type || !id) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    }
+
+    let success = false
+    
+    if (type === 'products') {
+      success = await DatabaseService.deleteProduct(id)
+    } else if (type === 'catalogItems') {
+      success = await DatabaseService.deleteCatalogItem(id)
+    }
+    
+    if (!success) {
       return NextResponse.json({ error: 'Failed to delete item' }, { status: 404 })
     }
 
-    console.log('DELETE /api/store - Delete successful for type:', type)
     const data = await DatabaseService.getAllData()
-    
-    return NextResponse.json({ 
-      success: true, 
-      data,
-      message: `${type} deleted successfully`
-    })
+    return NextResponse.json({ success: true, data })
   } catch (error) {
-    console.error('DELETE /api/store - Error details:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-      error
-    })
-    
-    const errorMessage = error instanceof Error ? error.message : 'Failed to delete item'
-    return NextResponse.json({ 
-      error: errorMessage,
-      details: process.env.NODE_ENV === 'development' ? error : undefined
-    }, { status: 500 })
+    console.error('Failed to delete item:', error)
+    return NextResponse.json({ error: 'Failed to delete item' }, { status: 500 })
   }
 }

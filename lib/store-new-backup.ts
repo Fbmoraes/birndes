@@ -43,16 +43,6 @@ export interface Settings {
     instagram: string
     whatsapp: string
   }
-  seo?: {
-    title: string
-    description: string
-    keywords: string
-  }
-  analytics?: {
-    googleAnalytics: string
-    searchConsole: string
-    facebookPixel: string
-  }
 }
 
 interface Store {
@@ -158,16 +148,6 @@ export const useStore = create<Store>()(
           facebook: "https://facebook.com/printsbrindes",
           instagram: "https://instagram.com/printsbrindes",
           whatsapp: "https://wa.me/5521999300409",
-        },
-        seo: {
-          title: "PrintsBrindes - Presentes e Artigos Personalizados",
-          description: "Presentes e artigos para festas personalizados! Canecas, cadernos, bolos e muito mais, tudo personalizado do seu jeito!",
-          keywords: "presentes personalizados, brindes, festas, canecas, cadernos, bolos",
-        },
-        analytics: {
-          googleAnalytics: "",
-          searchConsole: "",
-          facebookPixel: "",
         },
       },
       cartItems: [],
@@ -458,34 +438,11 @@ export const useStore = create<Store>()(
       // Settings actions
       updateSettings: async (newSettings) => {
         try {
-          console.log('Updating settings:', newSettings)
           const data = await apiCall('store', {
             method: 'PUT',
             body: JSON.stringify({ type: 'settings', item: newSettings }),
           })
-          
-          // Merge the new settings with existing ones
-          const currentSettings = get().settings
-          const updatedSettings = {
-            ...currentSettings,
-            ...data.data.settings,
-            // Ensure nested objects are properly merged
-            socialMedia: {
-              ...currentSettings.socialMedia,
-              ...(data.data.settings?.socialMedia || {})
-            },
-            seo: {
-              ...currentSettings.seo,
-              ...(data.data.settings?.seo || {})
-            },
-            analytics: {
-              ...currentSettings.analytics,
-              ...(data.data.settings?.analytics || {})
-            }
-          }
-          
-          set({ settings: updatedSettings })
-          console.log('Settings updated successfully:', updatedSettings)
+          set({ settings: data.data.settings })
         } catch (error) {
           console.error('Failed to update settings:', error)
           throw error
@@ -584,3 +541,4 @@ export const useStore = create<Store>()(
     },
   ),
 )
+
