@@ -1,0 +1,44 @@
+          {/* Navigation Tabs */}
+          <div className="flex space-x-8 mb-8 border-b border-gray-200">
+            <button
+              onClick={() => setActiveTab("products")}
+              className={`pb-4 border-b-2 font-medium flex items-center space-x-2 ${
+                activeTab === "products"
+                  ? "border-pink-500 text-pink-500"
+                  : "border-transparent text-gray-600 hover:text-pink-500"
+              }`}
+            >
+              <Package className="w-4 h-4" />
+              <span>Produtos</span>
+            </button>
+            <button
+              onClick={() => setActiveTab("catalog")}
+              className={`pb-4 border-b-2 font-medium flex items-center space-x-2 ${
+                activeTab === "catalog"
+                  ? "border-pink-500 text-pink-500"
+                  : "border-transparent text-gray-600 hover:text-pink-500"
+              }`}
+            >
+              <Palette className="w-4 h-4" />
+              <span>Catálogo Início</span>
+            </button>
+            <Button
+              onClick={() => router.push('/painel-administrativo/seo')}
+              variant="outline"
+              className="border-pink-500 text-pink-500 hover:bg-pink-50"
+            >
+              <Search className="w-4 h-4 mr-2" />
+              SEO Dashboard
+            </Button>
+            <button
+              onClick={() => setActiveTab("settings")}
+              className={`pb-4 border-b-2 font-medium flex items-center space-x-2 ${
+                activeTab === "settings"
+                  ? "border-pink-500 text-pink-500"
+                  : "border-transparent text-gray-600 hover:text-pink-500"
+              }`}
+            >
+              <Settings className="w-4 h-4" />
+              <span>Configurações</span>
+            </button>
+          </div>

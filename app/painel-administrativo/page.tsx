@@ -673,8 +673,7 @@ ${imageMessage}
                   ? "border-pink-500 text-pink-500"
                   : "border-transparent text-gray-600 hover:text-pink-500"
               }`}
-            >
-              <Package className="w-4 h-4" />
+            <Package className="w-4 h-4" />
               <span>Produtos</span>
             </button>
             <button
@@ -684,7 +683,8 @@ ${imageMessage}
                   ? "border-pink-500 text-pink-500"
                   : "border-transparent text-gray-600 hover:text-pink-500"
               }`}
-            <Palette className="w-4 h-4" />
+            >
+              <Palette className="w-4 h-4" />
               <span>Catálogo Início</span>
             </button>
             <Button
