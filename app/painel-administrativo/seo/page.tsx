@@ -48,7 +48,7 @@ export default function SEODashboardPage() {
     title: "PrintsBrindes - Presentes e Artigos Personalizados",
     description: "Presentes e artigos para festas personalizados! Canecas, cadernos, bolos e muito mais, tudo personalizado do seu jeito!",
     keywords: "presentes personalizados, brindes, festas, canecas, cadernos, bolos",
-    googleAnalytics: "",
+    googleAnalytics: "G-PS2KYDM9N0",
     searchConsole: "",
     facebookPixel: "",
   })
@@ -69,14 +69,17 @@ export default function SEODashboardPage() {
         title: settings.seo.title || prev.title,
         description: settings.seo.description || prev.description,
         keywords: settings.seo.keywords || prev.keywords,
+        googleAnalytics: settings.seo.googleAnalyticsId || settings.analytics?.googleAnalytics || prev.googleAnalytics,
+        searchConsole: settings.seo.googleSearchConsoleId || settings.analytics?.searchConsole || prev.searchConsole,
+        facebookPixel: settings.seo.facebookPixelId || settings.analytics?.facebookPixel || prev.facebookPixel,
       }))
     }
     if (settings?.analytics) {
       setSeoData(prev => ({
         ...prev,
-        googleAnalytics: settings.analytics?.googleAnalytics || "",
-        searchConsole: settings.analytics?.searchConsole || "",
-        facebookPixel: settings.analytics?.facebookPixel || "",
+        googleAnalytics: settings.analytics?.googleAnalytics || settings.seo?.googleAnalyticsId || prev.googleAnalytics,
+        searchConsole: settings.analytics?.searchConsole || settings.seo?.googleSearchConsoleId || prev.searchConsole,
+        facebookPixel: settings.analytics?.facebookPixel || settings.seo?.facebookPixelId || prev.facebookPixel,
       }))
     }
   }, [settings])
@@ -89,6 +92,14 @@ export default function SEODashboardPage() {
           title: seoData.title,
           description: seoData.description,
           keywords: seoData.keywords,
+          googleAnalyticsId: seoData.googleAnalytics,
+          googleSearchConsoleId: seoData.searchConsole,
+          facebookPixelId: seoData.facebookPixel,
+        },
+        analytics: {
+          googleAnalytics: seoData.googleAnalytics,
+          searchConsole: seoData.searchConsole,
+          facebookPixel: seoData.facebookPixel,
         }
       })
       setLastUpdated(new Date())
@@ -105,6 +116,14 @@ export default function SEODashboardPage() {
     setIsLoading(true)
     try {
       await updateSettings({
+        seo: {
+          title: seoData.title,
+          description: seoData.description,
+          keywords: seoData.keywords,
+          googleAnalyticsId: seoData.googleAnalytics,
+          googleSearchConsoleId: seoData.searchConsole,
+          facebookPixelId: seoData.facebookPixel,
+        },
         analytics: {
           googleAnalytics: seoData.googleAnalytics,
           searchConsole: seoData.searchConsole,

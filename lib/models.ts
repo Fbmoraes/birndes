@@ -243,6 +243,14 @@ export const defaultSettings: Omit<Settings, '_id' | 'updatedAt'> = {
     title: "PrintsBrindes - Presentes e Artigos Personalizados",
     description: "Presentes e artigos para festas personalizados! Canecas, cadernos, bolos e muito mais, tudo personalizado do seu jeito!",
     keywords: "presentes personalizados, brindes, festas, canecas, cadernos, bolos",
+    googleAnalyticsId: "G-PS2KYDM9N0",
+    googleSearchConsoleId: "",
+    facebookPixelId: "",
+  },
+  analytics: {
+    googleAnalytics: "G-PS2KYDM9N0",
+    searchConsole: "",
+    facebookPixel: "",
   },
 }
 

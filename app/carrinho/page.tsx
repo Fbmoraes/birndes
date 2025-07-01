@@ -13,27 +13,44 @@ export default function CarrinhoPage() {
   const total = subtotal
 
   const generateWhatsAppMessage = () => {
-    let message = "Olá! Gostaria de fazer um pedido:\n\n"
+    // Calculate the actual total from items being sent
+    const actualTotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+    
+    let message = `🛍️ *Novo Pedido - PrintsBrindes*\n\n`
+    message += `📋 *Itens do Pedido:*\n`
 
     cartItems.forEach((item, index) => {
-      message += `${index + 1}. ${item.name}\n`
-      message += `   Quantidade: ${item.quantity}\n`
-      message += `   Preço unitário: R$ ${item.price.toFixed(2).replace(".", ",")}\n`
-      if (item.customText) message += `   Texto personalizado: ${item.customText}\n`
-      if (item.theme) message += `   Tema: ${item.theme}\n`
-      message += `   Subtotal: R$ ${(item.price * item.quantity).toFixed(2).replace(".", ",")}\n\n`
+      const itemSubtotal = item.price * item.quantity
+      message += `${index + 1}. *${item.name}*\n`
+      message += `   💰 R$ ${item.price.toFixed(2).replace(".", ",")}\n`
+      message += `   📦 Quantidade: ${item.quantity}\n`
+      if (item.customText) message += `   ✏️ Personalização: ${item.customText}\n`
+      if (item.theme) message += `   🎨 Tema: ${item.theme}\n`
+      message += `   💵 Subtotal: R$ ${itemSubtotal.toFixed(2).replace(".", ",")}\n\n`
     })
 
-    message += `Total do pedido: R$ ${total.toFixed(2).replace(".", ",")}\n\n`
-    message += "Aguardo retorno para finalizar o pedido. Obrigado!"
+    message += `💰 *Total do Pedido: R$ ${actualTotal.toFixed(2).replace(".", ",")}*\n\n`
+    message += `📱 Pedido enviado através do site: ${window.location.origin}\n`
+    message += `🕒 Data/Hora: ${new Date().toLocaleString('pt-BR')}\n\n`
+    message += `Aguardo confirmação! 😊`
 
     return encodeURIComponent(message)
   }
 
   const handleWhatsAppOrder = () => {
+    if (cartItems.length === 0) {
+      alert("Seu carrinho está vazio!")
+      return
+    }
+    
     const message = generateWhatsAppMessage()
     const whatsappNumber = settings.whatsappNumber.replace(/\D/g, "")
     window.open(`https://wa.me/55${whatsappNumber}?text=${message}`, "_blank")
+    
+    // Optional: Clear cart after sending (uncomment if desired)
+    // setTimeout(() => {
+    //   clearCart()
+    // }, 2000)
   }
 
   return (

@@ -3,7 +3,6 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { DataInitializer } from "@/components/data-initializer"
-import { AnalyticsProvider } from "@/components/analytics-provider"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -87,7 +86,7 @@ export const metadata: Metadata = {
     yahoo: "your-yahoo-verification-code-here",
   },
   category: "shopping",
-  generator: 'v0.dev'
+    generator: 'v0.dev'
 }
 
 export const viewport = {
@@ -119,6 +118,19 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="msapplication-TileColor" content="#ec4899" />
         <meta name="msapplication-config" content="/browserconfig.xml" />
+
+        {/* Google Analytics */}
+        <script async src="https://www.googletagmanager.com/gtag/js?id=GA_MEASUREMENT_ID"></script>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'GA_MEASUREMENT_ID');
+            `,
+          }}
+        />
 
         {/* Google Search Console */}
         <meta name="google-site-verification" content="your-google-verification-code-here" />
@@ -155,8 +167,7 @@ export default function RootLayout({
             }),
           }}
         />
-      </head>
-      <body className={inter.className}>
+      </head<body className={inter.className}>
         <DataInitializer>
           <AnalyticsProvider>
             {children}
