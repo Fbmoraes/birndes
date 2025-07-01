@@ -560,13 +560,12 @@ ${imageMessage}
   }
 
   const totalProducts = products.length
-  
   // Mock sales data for demonstration - replace with real sales data
   const mockSalesData = [
-    { productName: "RelÃ³gio Personalizado", quantity: 2, totalPrice: 19.8, date: "2024-01-15" },
+    { productName: "Relógio Personalizado", quantity: 2, totalPrice: 19.8, date: "2024-01-15" },
     { productName: "Bolo Personalizado", quantity: 1, totalPrice: 25.0, date: "2024-01-16" },
     { productName: "Caderno de Colorir", quantity: 5, totalPrice: 39.5, date: "2024-01-17" },
-    { productName: "RelÃ³gio Personalizado", quantity: 3, totalPrice: 29.7, date: "2024-01-18" },
+    { productName: "Relógio Personalizado", quantity: 3, totalPrice: 29.7, date: "2024-01-18" },
   ]
   
   const totalRevenue = mockSalesData.reduce((sum, sale) => sum + sale.totalPrice, 0)
