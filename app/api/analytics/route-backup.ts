@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import { DatabaseService } from '@/lib/database-service-safe'
+import { DatabaseService } from '@/lib/database-service'
 
 // Check authentication
 function checkAuth(request: NextRequest) {
@@ -119,53 +119,39 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const type = searchParams.get('type') || 'all'
     
-    // Try to get real analytics data from database (with fallback)
-    let analyticsData = []
-    let seoData = []
-    
-    try {
-      const results = await Promise.all([
-        DatabaseService.getAnalytics(30),
-        DatabaseService.getSEOData(30)
-      ])
-      analyticsData = results[0]
-      seoData = results[1]
-    } catch (error) {
-      console.log('Using fallback analytics data:', error)
-      // Use mock data if database is not available
-    }
+    // Try to get real analytics data from database
+    const [analyticsData, seoData] = await Promise.all([
+      DatabaseService.getAnalytics(30),
+      DatabaseService.getSEOData(30)
+    ])
 
     let responseData
     
     if (type === 'analytics') {
       const data = analyticsData.length > 0 ? analyticsData[0] : generateRealisticAnalytics()
       
-      // Save generated data to database if no real data exists (with error handling)
+      // Save generated data to database if no real data exists
       if (analyticsData.length === 0) {
-        try {
-          await DatabaseService.saveAnalytics({
-            date: new Date(),
-            pageViews: data.pageViews,
-            uniqueVisitors: data.uniqueVisitors,
-            bounceRate: data.bounceRate,
-            avgSessionDuration: 180, // Convert time to seconds
-            topPages: [
-              { page: '/', views: Math.floor(data.pageViews * 0.3) },
-              { page: '/produtos', views: Math.floor(data.pageViews * 0.2) },
-              { page: '/categoria/relogios', views: Math.floor(data.pageViews * 0.15) },
-            ],
-            topProducts: [],
-            deviceStats: data.deviceStats,
-            trafficSources: {
-              organic: Math.floor(data.uniqueVisitors * 0.45),
-              direct: Math.floor(data.uniqueVisitors * 0.15),
-              social: Math.floor(data.uniqueVisitors * 0.25),
-              referral: Math.floor(data.uniqueVisitors * 0.15),
-            }
-          })
-        } catch (saveError) {
-          console.log('Could not save analytics data:', saveError)
-        }
+        await DatabaseService.saveAnalytics({
+          date: new Date(),
+          pageViews: data.pageViews,
+          uniqueVisitors: data.uniqueVisitors,
+          bounceRate: data.bounceRate,
+          avgSessionDuration: 180, // Convert time to seconds
+          topPages: [
+            { page: '/', views: Math.floor(data.pageViews * 0.3) },
+            { page: '/produtos', views: Math.floor(data.pageViews * 0.2) },
+            { page: '/categoria/relogios', views: Math.floor(data.pageViews * 0.15) },
+          ],
+          topProducts: [],
+          deviceStats: data.deviceStats,
+          trafficSources: {
+            organic: Math.floor(data.uniqueVisitors * 0.45),
+            direct: Math.floor(data.uniqueVisitors * 0.15),
+            social: Math.floor(data.uniqueVisitors * 0.25),
+            referral: Math.floor(data.uniqueVisitors * 0.15),
+          }
+        })
       }
       
       return NextResponse.json({
@@ -178,29 +164,25 @@ export async function GET(request: NextRequest) {
     if (type === 'seo') {
       const data = seoData.length > 0 ? seoData[0] : generateSEOMetrics()
       
-      // Save generated data to database if no real data exists (with error handling)
+      // Save generated data to database if no real data exists
       if (seoData.length === 0) {
-        try {
-          await DatabaseService.saveSEOData({
-            date: new Date(),
-            organicClicks: data.organicClicks,
-            impressions: data.impressions,
-            averagePosition: data.avgPosition,
-            clickThroughRate: data.ctr,
-            topKeywords: data.topKeywords.map(k => ({
-              keyword: k.keyword,
-              clicks: k.clicks,
-              impressions: k.clicks * 20, // Estimate impressions
-              position: k.position
-            })),
-            topPages: [
-              { page: '/', clicks: Math.floor(data.organicClicks * 0.3), impressions: Math.floor(data.impressions * 0.3) },
-              { page: '/produtos', clicks: Math.floor(data.organicClicks * 0.2), impressions: Math.floor(data.impressions * 0.2) },
-            ]
-          })
-        } catch (saveError) {
-          console.log('Could not save SEO data:', saveError)
-        }
+        await DatabaseService.saveSEOData({
+          date: new Date(),
+          organicClicks: data.organicClicks,
+          impressions: data.impressions,
+          averagePosition: data.avgPosition,
+          clickThroughRate: data.ctr,
+          topKeywords: data.topKeywords.map(k => ({
+            keyword: k.keyword,
+            clicks: k.clicks,
+            impressions: k.clicks * 20, // Estimate impressions
+            position: k.position
+          })),
+          topPages: [
+            { page: '/', clicks: Math.floor(data.organicClicks * 0.3), impressions: Math.floor(data.impressions * 0.3) },
+            { page: '/produtos', clicks: Math.floor(data.organicClicks * 0.2), impressions: Math.floor(data.impressions * 0.2) },
+          ]
+        })
       }
       
       return NextResponse.json({
@@ -225,17 +207,10 @@ export async function GET(request: NextRequest) {
     
   } catch (error) {
     console.error('Analytics API error:', error)
-    
-    // Return mock data even if everything fails
-    return NextResponse.json({
-      success: true,
-      data: {
-        analytics: generateRealisticAnalytics(),
-        seo: generateSEOMetrics()
-      },
-      timestamp: new Date().toISOString(),
-      fallback: true
-    })
+    return NextResponse.json(
+      { success: false, error: 'Erro ao buscar dados de analytics' },
+      { status: 500 }
+    )
   }
 }
 
@@ -258,43 +233,27 @@ export async function POST(request: NextRequest) {
     }
     
     if (action === 'save_analytics' && analyticsData) {
-      try {
-        await DatabaseService.saveAnalytics({
-          date: new Date(),
-          ...analyticsData
-        })
-        
-        return NextResponse.json({
-          success: true,
-          message: 'Dados de analytics salvos com sucesso'
-        })
-      } catch (error) {
-        console.log('Could not save analytics:', error)
-        return NextResponse.json({
-          success: true,
-          message: 'Dados de analytics processados (fallback mode)'
-        })
-      }
+      await DatabaseService.saveAnalytics({
+        date: new Date(),
+        ...analyticsData
+      })
+      
+      return NextResponse.json({
+        success: true,
+        message: 'Dados de analytics salvos com sucesso'
+      })
     }
     
     if (action === 'save_seo' && seoData) {
-      try {
-        await DatabaseService.saveSEOData({
-          date: new Date(),
-          ...seoData
-        })
-        
-        return NextResponse.json({
-          success: true,
-          message: 'Dados de SEO salvos com sucesso'
-        })
-      } catch (error) {
-        console.log('Could not save SEO data:', error)
-        return NextResponse.json({
-          success: true,
-          message: 'Dados de SEO processados (fallback mode)'
-        })
-      }
+      await DatabaseService.saveSEOData({
+        date: new Date(),
+        ...seoData
+      })
+      
+      return NextResponse.json({
+        success: true,
+        message: 'Dados de SEO salvos com sucesso'
+      })
     }
     
     return NextResponse.json(
