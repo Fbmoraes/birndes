@@ -1,68 +1,38 @@
 "use client"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import {
-  Search,
-  TrendingUp,
-  Globe,
-  Eye,
-  Users,
-  MousePointer,
+
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Badge } from '@/components/ui/badge'
+import { Progress } from '@/components/ui/progress'
+import { 
+  ArrowLeft, 
+  Search, 
+  TrendingUp, 
+  Eye, 
+  MousePointer, 
   BarChart3,
-  Target,
+  AlertTriangle,
   CheckCircle,
-  AlertCircle,
   XCircle,
-  ExternalLink,
-  Copy,
-  Download,
-  RefreshCw,
   Settings,
-  ArrowLeft,
-  DollarSign,
-  ShoppingCart,
-  MessageCircle,
+  Globe,
   Smartphone,
   Monitor,
   Tablet,
-} from "lucide-react"
-import Image from "next/image"
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { useStore } from "@/lib/store-new"
+  Users,
+  Clock,
+  Target,
+  Zap,
+  RefreshCw
+} from 'lucide-react'
 
-interface AnalyticsData {
-  pageViews: number
-  uniqueVisitors: number
-  conversionRate: number
-  avgOrderValue: number
-  totalOrders: number
-  totalRevenue: number
-  topProducts: Array<{
-    name: string
-    orders: number
-    revenue: number
-  }>
-  trafficSources: Array<{
-    source: string
-    visitors: number
-    percentage: number
-  }>
-  deviceStats: {
-    mobile: number
-    desktop: number
-    tablet: number
-  }
-  timeOnSite: string
-  bounceRate: number
-}
-
-interface SEOData {
+interface SEOMetrics {
   organicClicks: number
   impressions: number
   avgPosition: number
@@ -74,768 +44,473 @@ interface SEOData {
     clicks: number
   }>
   technicalIssues: Array<{
-    type: "error" | "warning" | "success"
+    type: 'success' | 'warning' | 'error'
     title: string
     description: string
-    priority: "high" | "medium" | "low"
+    priority: 'low' | 'medium' | 'high'
   }>
+}
+
+interface AnalyticsData {
+  pageViews: number
+  uniqueVisitors: number
+  bounceRate: number
+  timeOnSite: string
+  deviceStats: {
+    mobile: number
+    desktop: number
+    tablet: number
+  }
+  trafficSources: Array<{
+    source: string
+    visitors: number
+    percentage: number
+  }>
+}
+
+interface SEOSettings {
+  siteTitle: string
+  siteDescription: string
+  keywords: string
+  customDomain: string
+  googleAnalyticsId: string
+  googleSearchConsoleId: string
+  facebookPixelId: string
 }
 
 export default function SEODashboard() {
   const router = useRouter()
-  const { isAuthenticated, settings, updateSettings, products, cartItems } = useStore()
-  const [activeTab, setActiveTab] = useState("overview")
-  const [isLoading, setIsLoading] = useState(true)
-  const [lastUpdate, setLastUpdate] = useState<string>("")
-  
+  const [seoData, setSeoData] = useState<SEOMetrics | null>(null)
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null)
-  const [seoData, setSeoData] = useState<SEOData | null>(null)
-  
-  const [seoSettings, setSeoSettings] = useState({
+  const [loading, setLoading] = useState(true)
+  const [lastUpdate, setLastUpdate] = useState<string>('')
+  const [seoSettings, setSeoSettings] = useState<SEOSettings>({
     siteTitle: "PrintsBrindes - Presentes e Artigos Personalizados",
-    siteDescription:
-      "Presentes e artigos para festas personalizados! Canecas, cadernos, bolos e muito mais, tudo personalizado do seu jeito!",
-    keywords:
-      "presentes personalizados, brindes, festas, canecas, cadernos, bolos, personalização, Guaratiba, Rio de Janeiro",
-    googleAnalyticsId: settings?.googleAnalyticsId || "",
-    googleSearchConsoleId: settings?.googleSearchConsoleId || "",
-    facebookPixelId: settings?.facebookPixelId || "",
-    customDomain: "printsbrindes.com.br",
+    siteDescription: "Presentes e artigos para festas personalizados! Canecas, cadernos, bolos e muito mais, tudo personalizado do seu jeito!",
+    keywords: "presentes personalizados, brindes, festas, canecas, cadernos, bolos, lembrancinhas, guaratiba, rio de janeiro",
+    customDomain: "",
+    googleAnalyticsId: "",
+    googleSearchConsoleId: "",
+    facebookPixelId: "",
   })
 
-  // Dados padrão para quando a API não estiver disponível
-  const defaultMetrics = {
-    pageViews: 1250,
-    uniqueVisitors: 890,
-    bounceRate: 42.5,
-    avgPosition: 8.3,
-    searchConsoleClicks: 320,
-    searchConsoleImpressions: 5400,
-    searchConsoleCTR: 5.9,
-    topPages: [
-      { page: "/", views: 450 },
-      { page: "/produtos", views: 320 },
-      { page: "/produto/canecas-personalizadas", views: 180 },
-      { page: "/sobre-nos", views: 100 },
-      { page: "/contato", views: 85 }
-    ],
-    topKeywords: [
-      "presentes personalizados guaratiba",
-      "brindes festa rio de janeiro", 
-      "canecas personalizadas rj",
-      "lembrancinhas personalizadas",
-      "bolos decorados guaratiba"
-    ]
-  }
+  useEffect(() => {
+    fetchData()
+  }, [])
 
-  const defaultSeoIssues = [
-    {
-      type: "success" as const,
-      title: "Velocidade de Carregamento",
-      description: "Site carrega em menos de 3 segundos",
-      priority: "low" as const,
-      page: "/"
-    },
-    {
-      type: "success" as const,
-      title: "Mobile-Friendly",
-      description: "Site otimizado para dispositivos móveis",
-      priority: "low" as const,
-      page: "/"
-    },
-    {
-      type: "warning" as const,
-      title: "Meta Descriptions",
-      description: "3 páginas sem meta description otimizada",
-      priority: "medium" as const,
-      page: "/produtos"
-    },
-    {
-      type: "error" as const,
-      title: "Imagens sem Alt Text",
-      description: "12 imagens precisam de texto alternativo para SEO",
-      priority: "high" as const,
-      page: "/produtos"
-    },
-    {
-      type: "warning" as const,
-      title: "Títulos H1 Duplicados",
-      description: "2 páginas com títulos H1 similares",
-      priority: "medium" as const,
-      page: "/categoria"
-    }
-  ]
-
-  // Função para buscar dados reais de analytics
-  const fetchAnalyticsData = async () => {
+  const fetchData = async () => {
     try {
-      setIsLoading(true)
-      const response = await fetch('/api/analytics?type=all', {
-        method: 'GET',
-        headers: {
-          'Cache-Control': 'no-cache',
-        },
-      })
+      setLoading(true)
+      const response = await fetch('/api/analytics')
+      const result = await response.json()
       
-      if (response.ok) {
-        const result = await response.json()
-        if (result.success) {
-          setAnalyticsData(result.data.analytics)
-          setSeoData(result.data.seo)
-          setLastUpdate(new Date().toLocaleString('pt-BR'))
-        }
-      } else {
-        // Se a API falhar, usar dados padrão
-        console.log('API não disponível, usando dados simulados')
-        setAnalyticsData({
-          pageViews: defaultMetrics.pageViews,
-          uniqueVisitors: defaultMetrics.uniqueVisitors,
-          conversionRate: 3.2,
-          avgOrderValue: 65.50,
-          totalOrders: 28,
-          totalRevenue: 1834.00,
-          topProducts: [
-            { name: "Canecas Personalizadas", orders: 12, revenue: 480.00 },
-            { name: "Cadernos de Colorir", orders: 8, revenue: 320.00 },
-            { name: "Relógios Personalizados", orders: 5, revenue: 425.00 },
-            { name: "Bolos Decorados", orders: 3, revenue: 270.00 }
-          ],
-          trafficSources: [
-            { source: "Busca Orgânica", visitors: 401, percentage: 45 },
-            { source: "Redes Sociais", visitors: 223, percentage: 25 },
-            { source: "Direto", visitors: 134, percentage: 15 },
-            { source: "WhatsApp", visitors: 89, percentage: 10 },
-            { source: "Outros", visitors: 43, percentage: 5 }
-          ],
-          deviceStats: {
-            mobile: 579,
-            desktop: 223,
-            tablet: 88
-          },
-          timeOnSite: "3m 24s",
-          bounceRate: defaultMetrics.bounceRate
-        })
-        
-        setSeoData({
-          organicClicks: defaultMetrics.searchConsoleClicks,
-          impressions: defaultMetrics.searchConsoleImpressions,
-          avgPosition: defaultMetrics.avgPosition,
-          ctr: defaultMetrics.searchConsoleCTR,
-          indexedPages: 47,
-          topKeywords: [
-            { keyword: "presentes personalizados guaratiba", position: 4, clicks: 45 },
-            { keyword: "brindes festa rio de janeiro", position: 7, clicks: 32 },
-            { keyword: "canecas personalizadas rj", position: 5, clicks: 38 },
-            { keyword: "lembrancinhas personalizadas", position: 9, clicks: 28 },
-            { keyword: "bolos decorados guaratiba", position: 3, clicks: 52 }
-          ],
-          technicalIssues: defaultSeoIssues
-        })
-        
+      if (result.success) {
+        setAnalyticsData(result.data.analytics)
+        setSeoData(result.data.seo)
         setLastUpdate(new Date().toLocaleString('pt-BR'))
       }
     } catch (error) {
-      console.error('Erro ao buscar dados de analytics:', error)
-      // Usar dados padrão em caso de erro
-      setAnalyticsData({
-        pageViews: defaultMetrics.pageViews,
-        uniqueVisitors: defaultMetrics.uniqueVisitors,
-        conversionRate: 3.2,
-        avgOrderValue: 65.50,
-        totalOrders: 28,
-        totalRevenue: 1834.00,
-        topProducts: [
-          { name: "Canecas Personalizadas", orders: 12, revenue: 480.00 },
-          { name: "Cadernos de Colorir", orders: 8, revenue: 320.00 }
-        ],
-        trafficSources: [
-          { source: "Busca Orgânica", visitors: 401, percentage: 45 },
-          { source: "Redes Sociais", visitors: 223, percentage: 25 }
-        ],
-        deviceStats: { mobile: 579, desktop: 223, tablet: 88 },
-        timeOnSite: "3m 24s",
-        bounceRate: defaultMetrics.bounceRate
-      })
-      
-      setSeoData({
-        organicClicks: defaultMetrics.searchConsoleClicks,
-        impressions: defaultMetrics.searchConsoleImpressions,
-        avgPosition: defaultMetrics.avgPosition,
-        ctr: defaultMetrics.searchConsoleCTR,
-        indexedPages: 47,
-        topKeywords: [
-          { keyword: "presentes personalizados guaratiba", position: 4, clicks: 45 }
-        ],
-        technicalIssues: defaultSeoIssues
-      })
-      
-      setLastUpdate(new Date().toLocaleString('pt-BR'))
+      console.error('Erro ao buscar dados:', error)
     } finally {
-      setIsLoading(false)
+      setLoading(false)
     }
   }
 
-  useEffect(() => {
-    if (!isAuthenticated) {
-      router.push("/area-administrativa")
-    } else {
-      fetchAnalyticsData()
-    }
-  }, [isAuthenticated, router])
-
-  // Atualizar dados a cada 5 minutos
-  useEffect(() => {
-    const interval = setInterval(fetchAnalyticsData, 5 * 60 * 1000)
-    return () => clearInterval(interval)
-  }, [])
-
   const handleSaveSEOSettings = async () => {
     try {
-      // Salvar configurações no backend
-      await updateSettings({
-        googleAnalyticsId: seoSettings.googleAnalyticsId,
-        googleSearchConsoleId: seoSettings.googleSearchConsoleId,
-        facebookPixelId: seoSettings.facebookPixelId,
+      // Save SEO settings to database
+      const response = await fetch('/api/store', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: 'settings',
+          id: 1,
+          item: {
+            seo: {
+              title: seoSettings.siteTitle,
+              description: seoSettings.siteDescription,
+              keywords: seoSettings.keywords,
+              googleAnalyticsId: seoSettings.googleAnalyticsId,
+              googleSearchConsoleId: seoSettings.googleSearchConsoleId,
+              facebookPixelId: seoSettings.facebookPixelId,
+            }
+          }
+        })
       })
-      alert("✅ Configurações de SEO salvas com sucesso!")
+
+      if (response.ok) {
+        alert("✅ Configurações de SEO salvas com sucesso!")
+      } else {
+        throw new Error('Erro ao salvar configurações')
+      }
     } catch (error) {
+      console.error('Erro ao salvar configurações de SEO:', error)
       alert("❌ Erro ao salvar configurações. Tente novamente.")
     }
   }
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text)
-    alert("📋 Copiado para a área de transferência!")
-  }
-
-  const generateSitemap = async () => {
-    try {
-      // Regenerar sitemap
-      const response = await fetch('/api/sitemap/generate', { method: 'POST' })
-      if (response.ok) {
-        alert("✅ Sitemap regenerado com sucesso!")
-      } else {
-        alert("⚠️ Sitemap será regenerado automaticamente.")
-      }
-    } catch (error) {
-      alert("⚠️ Sitemap será regenerado automaticamente.")
+  const getIssueIcon = (type: string) => {
+    switch (type) {
+      case 'success': return <CheckCircle className="w-5 h-5 text-green-500" />
+      case 'warning': return <AlertTriangle className="w-5 h-5 text-yellow-500" />
+      case 'error': return <XCircle className="w-5 h-5 text-red-500" />
+      default: return <AlertTriangle className="w-5 h-5 text-gray-500" />
     }
   }
 
-  const handleRefreshData = () => {
-    fetchAnalyticsData()
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high': return 'bg-red-100 text-red-800'
+      case 'medium': return 'bg-yellow-100 text-yellow-800'
+      case 'low': return 'bg-green-100 text-green-800'
+      default: return 'bg-gray-100 text-gray-800'
+    }
   }
 
-  if (!isAuthenticated) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-pink-50 to-white flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-600">Redirecionando para login...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (isLoading && !analyticsData) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-pink-50 to-white flex items-center justify-center">
-        <div className="text-center">
-          <RefreshCw className="w-8 h-8 animate-spin text-pink-500 mx-auto mb-4" />
-          <p className="text-gray-600">Carregando dados de analytics...</p>
+          <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-4 text-pink-500" />
+          <p className="text-gray-600">Carregando dados do SEO...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-50 to-white">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-4 py-3">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center">
-            <Image src="/logo.png" alt="PrintsBrindes Logo" width={120} height={40} />
-          </div>
-          <div className="flex items-center space-x-4">
-            <a href="/painel-administrativo" className="text-pink-500 hover:text-pink-600">
-              <ArrowLeft className="w-5 h-5" />
-            </a>
+      <header className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-6">
+            <div className="flex items-center space-x-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => router.push('/painel-administrativo')}
+                className="flex items-center space-x-2"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span>Voltar</span>
+              </Button>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-800">Dashboard SEO Avançado</h1>
+                <p className="text-gray-600">Monitore e otimize a performance do seu site nos mecanismos de busca</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              <div className="text-sm text-gray-500">
+                Última atualização: {lastUpdate}
+              </div>
+              <Button onClick={fetchData} variant="outline" size="sm">
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Atualizar
+              </Button>
+            </div>
           </div>
         </div>
       </header>
 
-      {/* SEO Dashboard Content */}
-      <section className="py-8 px-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-800">Dashboard SEO & Analytics</h1>
-              <p className="text-gray-600">Monitore vendas, tráfego e performance do seu site em tempo real</p>
-              {lastUpdate && (
-                <p className="text-sm text-gray-500 mt-1">
-                  Última atualização: {lastUpdate}
-                </p>
-              )}
-            </div>
-            <div className="flex space-x-2">
-              <Button onClick={handleRefreshData} variant="outline" disabled={isLoading}>
-                <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-                Atualizar Dados
-              </Button>
-              <Button onClick={generateSitemap} className="bg-pink-500 hover:bg-pink-600 text-white">
-                <Settings className="w-4 h-4 mr-2" />
-                Configurar
-              </Button>
-            </div>
-          </div>
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Tabs defaultValue="overview" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="overview">Visão Geral</TabsTrigger>
+            <TabsTrigger value="keywords">Palavras-chave</TabsTrigger>
+            <TabsTrigger value="technical">Análise Técnica</TabsTrigger>
+            <TabsTrigger value="settings">Configurações</TabsTrigger>
+          </TabsList>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-6">
-              <TabsTrigger value="overview">Visão Geral</TabsTrigger>
-              <TabsTrigger value="sales">Vendas & Conversões</TabsTrigger>
-              <TabsTrigger value="seo">SEO & Palavras-chave</TabsTrigger>
-              <TabsTrigger value="traffic">Tráfego & Dispositivos</TabsTrigger>
-              <TabsTrigger value="issues">Problemas Técnicos</TabsTrigger>
-              <TabsTrigger value="settings">Configurações</TabsTrigger>
-            </TabsList>
-
-            {/* Overview Tab */}
-            <TabsContent value="overview" className="space-y-6">
-              {/* Key Metrics */}
-              <div className="grid md:grid-cols-4 gap-6">
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center space-x-4">
-                      <div className="bg-blue-100 rounded-full w-12 h-12 flex items-center justify-center">
-                        <Eye className="w-6 h-6 text-blue-500" />
-                      </div>
-                      <div>
-                        <p className="text-gray-600 text-sm">Visualizações</p>
-                        <p className="text-2xl font-bold text-gray-800">
-                          {analyticsData?.pageViews.toLocaleString() || '0'}
-                        </p>
-                        <p className="text-green-600 text-sm">+12% vs mês anterior</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center space-x-4">
-                      <div className="bg-green-100 rounded-full w-12 h-12 flex items-center justify-center">
-                        <Users className="w-6 h-6 text-green-500" />
-                      </div>
-                      <div>
-                        <p className="text-gray-600 text-sm">Visitantes Únicos</p>
-                        <p className="text-2xl font-bold text-gray-800">
-                          {analyticsData?.uniqueVisitors.toLocaleString() || '0'}
-                        </p>
-                        <p className="text-green-600 text-sm">+8% vs mês anterior</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center space-x-4">
-                      <div className="bg-yellow-100 rounded-full w-12 h-12 flex items-center justify-center">
-                        <MousePointer className="w-6 h-6 text-yellow-600" />
-                      </div>
-                      <div>
-                        <p className="text-gray-600 text-sm">Taxa de Rejeição</p>
-                        <p className="text-2xl font-bold text-gray-800">
-                          {analyticsData?.bounceRate || '0'}%
-                        </p>
-                        <p className="text-red-600 text-sm">+2% vs mês anterior</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center space-x-4">
-                      <div className="bg-purple-100 rounded-full w-12 h-12 flex items-center justify-center">
-                        <BarChart3 className="w-6 h-6 text-purple-500" />
-                      </div>
-                      <div>
-                        <p className="text-gray-600 text-sm">Posição Média</p>
-                        <p className="text-2xl font-bold text-gray-800">
-                          {seoData?.avgPosition || '0'}
-                        </p>
-                        <p className="text-green-600 text-sm">-1.2 vs mês anterior</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Search Console Metrics */}
-              <div className="grid md:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <Search className="w-5 h-5" />
-                      <span>Google Search Console</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Cliques</span>
-                        <span className="font-bold text-gray-800">
-                          {seoData?.organicClicks || '0'}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Impressões</span>
-                        <span className="font-bold text-gray-800">
-                          {seoData?.impressions.toLocaleString() || '0'}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600">CTR</span>
-                        <span className="font-bold text-gray-800">{seoData?.ctr || '0'}%</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <TrendingUp className="w-5 h-5" />
-                      <span>Páginas Mais Visitadas</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {defaultMetrics.topPages.map((page, index) => (
-                        <div key={index} className="flex justify-between items-center">
-                          <span className="text-gray-600 text-sm">{page.page}</span>
-                          <span className="font-medium text-gray-800">{page.views}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-
-            {/* Sales Tab */}
-            <TabsContent value="sales" className="space-y-6">
-              <div className="grid md:grid-cols-3 gap-6">
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center space-x-4">
-                      <div className="bg-green-100 rounded-full w-12 h-12 flex items-center justify-center">
-                        <DollarSign className="w-6 h-6 text-green-500" />
-                      </div>
-                      <div>
-                        <p className="text-gray-600 text-sm">Receita Total</p>
-                        <p className="text-2xl font-bold text-gray-800">
-                          R$ {analyticsData?.totalRevenue.toFixed(2) || '0,00'}
-                        </p>
-                        <p className="text-green-600 text-sm">+15% vs mês anterior</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center space-x-4">
-                      <div className="bg-blue-100 rounded-full w-12 h-12 flex items-center justify-center">
-                        <ShoppingCart className="w-6 h-6 text-blue-500" />
-                      </div>
-                      <div>
-                        <p className="text-gray-600 text-sm">Total de Pedidos</p>
-                        <p className="text-2xl font-bold text-gray-800">
-                          {analyticsData?.totalOrders || '0'}
-                        </p>
-                        <p className="text-green-600 text-sm">+8% vs mês anterior</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-6">
-                    <div className="flex items-center space-x-4">
-                      <div className="bg-purple-100 rounded-full w-12 h-12 flex items-center justify-center">
-                        <Target className="w-6 h-6 text-purple-500" />
-                      </div>
-                      <div>
-                        <p className="text-gray-600 text-sm">Taxa de Conversão</p>
-                        <p className="text-2xl font-bold text-gray-800">
-                          {analyticsData?.conversionRate || '0'}%
-                        </p>
-                        <p className="text-green-600 text-sm">+0.5% vs mês anterior</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
+          {/* Overview Tab */}
+          <TabsContent value="overview" className="space-y-6">
+            {/* Key Metrics */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <Card>
-                <CardHeader>
-                  <CardTitle>Produtos Mais Vendidos</CardTitle>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Cliques Orgânicos</CardTitle>
+                  <MousePointer className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {analyticsData?.topProducts.map((product, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div>
-                          <span className="font-medium text-gray-800">{product.name}</span>
-                          <p className="text-sm text-gray-600">{product.orders} pedidos</p>
-                        </div>
-                        <div className="text-right">
-                          <span className="font-bold text-gray-800">R$ {product.revenue.toFixed(2)}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                  <div className="text-2xl font-bold">{seoData?.organicClicks || 0}</div>
+                  <p className="text-xs text-muted-foreground">
+                    +12% em relação ao mês anterior
+                  </p>
                 </CardContent>
               </Card>
-            </TabsContent>
 
-            {/* SEO Tab */}
-            <TabsContent value="seo" className="space-y-6">
               <Card>
-                <CardHeader>
-                  <CardTitle>Palavras-chave Principais</CardTitle>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Impressões</CardTitle>
+                  <Eye className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {seoData?.topKeywords.map((keyword, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div>
-                          <span className="font-medium text-gray-800">{keyword.keyword}</span>
-                          <div className="flex items-center space-x-4 mt-1">
-                            <Badge variant="secondary">Posição: {keyword.position}</Badge>
-                            <Badge variant="outline">Cliques: {keyword.clicks}</Badge>
-                          </div>
-                        </div>
-                        <Button variant="outline" size="sm">
-                          <ExternalLink className="w-4 h-4" />
-                        </Button>
+                  <div className="text-2xl font-bold">{seoData?.impressions || 0}</div>
+                  <p className="text-xs text-muted-foreground">
+                    +8% em relação ao mês anterior
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Posição Média</CardTitle>
+                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{seoData?.avgPosition || 0}</div>
+                  <p className="text-xs text-muted-foreground">
+                    -0.5 posições (melhoria)
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">CTR</CardTitle>
+                  <Target className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{seoData?.ctr || 0}%</div>
+                  <p className="text-xs text-muted-foreground">
+                    +0.3% em relação ao mês anterior
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Traffic Sources and Device Stats */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Fontes de Tráfego</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {analyticsData?.trafficSources.map((source, index) => (
+                    <div key={index} className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-3 h-3 rounded-full bg-pink-500"></div>
+                        <span className="text-sm font-medium">{source.source}</span>
                       </div>
-                    ))}
-                  </div>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm text-gray-600">{source.visitors}</span>
+                        <Badge variant="secondary">{source.percentage}%</Badge>
+                      </div>
+                    </div>
+                  ))}
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Sugestões de Palavras-chave</CardTitle>
+                  <CardTitle>Dispositivos</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    {[
-                      "lembrancinhas personalizadas guaratiba",
-                      "presentes únicos rio de janeiro",
-                      "brindes corporativos rj",
-                      "festa infantil personalizada",
-                      "canecas com foto rio de janeiro",
-                      "bolos decorados guaratiba",
-                    ].map((keyword, index) => (
-                      <div key={index} className="p-3 border border-gray-200 rounded-lg">
-                        <span className="text-gray-800">{keyword}</span>
-                        <div className="flex items-center space-x-2 mt-2">
-                          <Badge variant="outline" className="text-xs">
-                            Dificuldade: Baixa
-                          </Badge>
-                          <Badge variant="outline" className="text-xs">
-                            Volume: {Math.floor(Math.random() * 500) + 50}
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Smartphone className="w-4 h-4 text-blue-500" />
+                      <span className="text-sm font-medium">Mobile</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm text-gray-600">{analyticsData?.deviceStats.mobile || 0}</span>
+                      <Badge variant="secondary">65%</Badge>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Monitor className="w-4 h-4 text-green-500" />
+                      <span className="text-sm font-medium">Desktop</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm text-gray-600">{analyticsData?.deviceStats.desktop || 0}</span>
+                      <Badge variant="secondary">25%</Badge>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Tablet className="w-4 h-4 text-purple-500" />
+                      <span className="text-sm font-medium">Tablet</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm text-gray-600">{analyticsData?.deviceStats.tablet || 0}</span>
+                      <Badge variant="secondary">10%</Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Site Performance */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Performance do Site</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-green-600">{analyticsData?.pageViews || 0}</div>
+                    <p className="text-sm text-gray-600">Visualizações</p>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-blue-600">{analyticsData?.uniqueVisitors || 0}</div>
+                    <p className="text-sm text-gray-600">Visitantes Únicos</p>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-purple-600">{analyticsData?.bounceRate || 0}%</div>
+                    <p className="text-sm text-gray-600">Taxa de Rejeição</p>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-orange-600">{analyticsData?.timeOnSite || '0m 0s'}</div>
+                    <p className="text-sm text-gray-600">Tempo no Site</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Keywords Tab */}
+          <TabsContent value="keywords" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Top Palavras-chave</CardTitle>
+                <p className="text-sm text-gray-600">Palavras-chave que mais trazem tráfego para seu site</p>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {seoData?.topKeywords.map((keyword, index) => (
+                    <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="flex-1">
+                        <h4 className="font-medium">{keyword.keyword}</h4>
+                        <div className="flex items-center space-x-4 mt-2">
+                          <span className="text-sm text-gray-600">Posição: {keyword.position}</span>
+                          <span className="text-sm text-gray-600">Cliques: {keyword.clicks}</span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <Badge 
+                          variant={keyword.position <= 3 ? "default" : keyword.position <= 10 ? "secondary" : "outline"}
+                        >
+                          #{keyword.position}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Technical Tab */}
+          <TabsContent value="technical" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Análise Técnica SEO</CardTitle>
+                <p className="text-sm text-gray-600">Problemas técnicos que podem afetar seu ranking</p>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {seoData?.technicalIssues.map((issue, index) => (
+                    <div key={index} className="flex items-start space-x-4 p-4 border rounded-lg">
+                      {getIssueIcon(issue.type)}
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-medium">{issue.title}</h4>
+                          <Badge className={getPriorityColor(issue.priority)}>
+                            {issue.priority === 'high' ? 'Alta' : issue.priority === 'medium' ? 'Média' : 'Baixa'}
                           </Badge>
                         </div>
+                        <p className="text-sm text-gray-600 mt-1">{issue.description}</p>
                       </div>
-                    ))}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* SEO Score */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Score SEO Geral</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-medium">Performance Técnica</span>
+                      <span className="text-sm text-gray-600">85/100</span>
+                    </div>
+                    <Progress value={85} className="h-2" />
                   </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* Traffic Tab */}
-            <TabsContent value="traffic" className="space-y-6">
-              <div className="grid md:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Fontes de Tráfego</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {analyticsData?.trafficSources.map((source, index) => (
-                        <div key={index} className="flex items-center justify-between">
-                          <span className="text-gray-600">{source.source}</span>
-                          <div className="flex items-center space-x-2">
-                            <span className="font-medium text-gray-800">{source.visitors}</span>
-                            <Badge variant="outline">{source.percentage}%</Badge>
-                          </div>
-                        </div>
-                      ))}
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-medium">Otimização de Conteúdo</span>
+                      <span className="text-sm text-gray-600">78/100</span>
                     </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Dispositivos</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <Smartphone className="w-4 h-4 text-gray-500" />
-                          <span className="text-gray-600">Mobile</span>
-                        </div>
-                        <span className="font-medium text-gray-800">
-                          {analyticsData?.deviceStats.mobile || '0'}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <Monitor className="w-4 h-4 text-gray-500" />
-                          <span className="text-gray-600">Desktop</span>
-                        </div>
-                        <span className="font-medium text-gray-800">
-                          {analyticsData?.deviceStats.desktop || '0'}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <Tablet className="w-4 h-4 text-gray-500" />
-                          <span className="text-gray-600">Tablet</span>
-                        </div>
-                        <span className="font-medium text-gray-800">
-                          {analyticsData?.deviceStats.tablet || '0'}
-                        </span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Métricas de Engajamento</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid md:grid-cols-3 gap-6">
-                    <div className="text-center">
-                      <p className="text-2xl font-bold text-gray-800">
-                        {analyticsData?.timeOnSite || '0s'}
-                      </p>
-                      <p className="text-gray-600 text-sm">Tempo Médio no Site</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-2xl font-bold text-gray-800">
-                        {analyticsData?.bounceRate || '0'}%
-                      </p>
-                      <p className="text-gray-600 text-sm">Taxa de Rejeição</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-2xl font-bold text-gray-800">2.3</p>
-                      <p className="text-gray-600 text-sm">Páginas por Sessão</p>
-                    </div>
+                    <Progress value={78} className="h-2" />
                   </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-medium">Experiência do Usuário</span>
+                      <span className="text-sm text-gray-600">92/100</span>
+                    </div>
+                    <Progress value={92} className="h-2" />
+                  </div>
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-medium">Score Geral</span>
+                      <span className="text-sm font-bold text-green-600">85/100</span>
+                    </div>
+                    <Progress value={85} className="h-3" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-            {/* Issues Tab */}
-            <TabsContent value="issues" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Problemas de SEO Detectados</CardTitle>
-                </CardHeader>
-                <CardContent>
+          {/* Settings Tab */}
+          <TabsContent value="settings" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Configurações SEO</CardTitle>
+                <p className="text-sm text-gray-600">Configure as informações básicas do seu site</p>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-4">
-                    {(seoData?.technicalIssues || defaultSeoIssues).map((issue, index) => (
-                      <div key={index} className="flex items-start space-x-4 p-4 border border-gray-200 rounded-lg">
-                        <div className="mt-1">
-                          {issue.type === "success" && <CheckCircle className="w-5 h-5 text-green-500" />}
-                          {issue.type === "warning" && <AlertCircle className="w-5 h-5 text-yellow-500" />}
-                          {issue.type === "error" && <XCircle className="w-5 h-5 text-red-500" />}
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2 mb-1">
-                            <h3 className="font-medium text-gray-800">{issue.title}</h3>
-                            <Badge
-                              variant={
-                                issue.priority === "high"
-                                  ? "destructive"
-                                  : issue.priority === "medium"
-                                    ? "default"
-                                    : "secondary"
-                              }
-                              className="text-xs"
-                            >
-                              {issue.priority === "high" ? "Alta" : issue.priority === "medium" ? "Média" : "Baixa"}
-                            </Badge>
-                          </div>
-                          <p className="text-gray-600 text-sm">{issue.description}</p>
-                          {issue.page && <p className="text-gray-500 text-xs mt-1">Página: {issue.page}</p>}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            {/* Settings Tab */}
-            <TabsContent value="settings" className="space-y-6">
-              <div className="grid md:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Configurações Básicas de SEO</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
                     <div>
-                      <Label htmlFor="siteTitle">Título do Site</Label>
+                      <Label htmlFor="siteTitle">Título Principal do Site</Label>
                       <Input
                         id="siteTitle"
                         value={seoSettings.siteTitle}
                         onChange={(e) => setSeoSettings({ ...seoSettings, siteTitle: e.target.value })}
+                        placeholder="Título do seu site"
                       />
                     </div>
                     <div>
-                      <Label htmlFor="siteDescription">Descrição do Site</Label>
+                      <Label htmlFor="siteDescription">Descrição Meta</Label>
                       <Textarea
                         id="siteDescription"
                         value={seoSettings.siteDescription}
                         onChange={(e) => setSeoSettings({ ...seoSettings, siteDescription: e.target.value })}
+                        placeholder="Descrição do seu site"
                         rows={3}
                       />
                     </div>
                     <div>
-                      <Label htmlFor="keywords">Palavras-chave (separadas por vírgula)</Label>
+                      <Label htmlFor="keywords">Palavras-chave Principais</Label>
                       <Textarea
                         id="keywords"
                         value={seoSettings.keywords}
                         onChange={(e) => setSeoSettings({ ...seoSettings, keywords: e.target.value })}
+                        placeholder="palavra1, palavra2, palavra3"
                         rows={2}
                       />
                     </div>
-                    <div>
-                      <Label htmlFor="customDomain">Domínio Personalizado</Label>
-                      <Input
-                        id="customDomain"
-                        value={seoSettings.customDomain}
-                        onChange={(e) => setSeoSettings({ ...seoSettings, customDomain: e.target.value })}
-                        placeholder="seudominio.com.br"
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Integrações de Analytics</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
+                  </div>
+                  
+                  <div className="space-y-4">
                     <div>
                       <Label htmlFor="googleAnalytics">Google Analytics ID</Label>
                       <Input
@@ -863,82 +538,55 @@ export default function SEODashboard() {
                         placeholder="123456789012345"
                       />
                     </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Ferramentas SEO</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid md:grid-cols-3 gap-4">
-                    <div className="p-4 border border-gray-200 rounded-lg text-center">
-                      <Globe className="w-8 h-8 text-blue-500 mx-auto mb-2" />
-                      <h3 className="font-medium text-gray-800 mb-2">Sitemap.xml</h3>
-                      <div className="space-y-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => copyToClipboard("https://printsbrindes.com.br/sitemap.xml")}
-                        >
-                          <Copy className="w-4 h-4 mr-1" />
-                          Copiar URL
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <ExternalLink className="w-4 h-4 mr-1" />
-                          Visualizar
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div className="p-4 border border-gray-200 rounded-lg text-center">
-                      <Target className="w-8 h-8 text-green-500 mx-auto mb-2" />
-                      <h3 className="font-medium text-gray-800 mb-2">Robots.txt</h3>
-                      <div className="space-y-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => copyToClipboard("https://printsbrindes.com.br/robots.txt")}
-                        >
-                          <Copy className="w-4 h-4 mr-1" />
-                          Copiar URL
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <ExternalLink className="w-4 h-4 mr-1" />
-                          Visualizar
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div className="p-4 border border-gray-200 rounded-lg text-center">
-                      <Download className="w-8 h-8 text-purple-500 mx-auto mb-2" />
-                      <h3 className="font-medium text-gray-800 mb-2">Relatório SEO</h3>
-                      <div className="space-y-2">
-                        <Button variant="outline" size="sm">
-                          <Download className="w-4 h-4 mr-1" />
-                          Baixar PDF
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <ExternalLink className="w-4 h-4 mr-1" />
-                          Compartilhar
-                        </Button>
-                      </div>
-                    </div>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+                
+                <div className="flex justify-end">
+                  <Button onClick={handleSaveSEOSettings} className="bg-pink-500 hover:bg-pink-600 text-white">
+                    <Settings className="w-4 h-4 mr-2" />
+                    Salvar Configurações
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
 
-              <div className="flex justify-end">
-                <Button onClick={handleSaveSEOSettings} className="bg-pink-500 hover:bg-pink-600 text-white">
-                  <Settings className="w-4 h-4 mr-2" />
-                  Salvar Configurações
-                </Button>
-              </div>
-            </TabsContent>
-          </Tabs>
-        </div>
-      </section>
+            {/* SEO Tools */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Ferramentas SEO</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="text-center p-6 border rounded-lg">
+                    <BarChart3 className="w-8 h-8 text-purple-500 mx-auto mb-2" />
+                    <h3 className="font-medium text-gray-800 mb-2">Relatório SEO</h3>
+                    <p className="text-sm text-gray-600 mb-4">Gere um relatório completo</p>
+                    <Button variant="outline" size="sm" className="w-full">
+                      Gerar Relatório
+                    </Button>
+                  </div>
+                  <div className="text-center p-6 border rounded-lg">
+                    <Search className="w-8 h-8 text-blue-500 mx-auto mb-2" />
+                    <h3 className="font-medium text-gray-800 mb-2">Análise de Palavras-chave</h3>
+                    <p className="text-sm text-gray-600 mb-4">Descubra novas oportunidades</p>
+                    <Button variant="outline" size="sm" className="w-full">
+                      Analisar
+                    </Button>
+                  </div>
+                  <div className="text-center p-6 border rounded-lg">
+                    <Zap className="w-8 h-8 text-green-500 mx-auto mb-2" />
+                    <h3 className="font-medium text-gray-800 mb-2">Otimização Automática</h3>
+                    <p className="text-sm text-gray-600 mb-4">Aplique melhorias automaticamente</p>
+                    <Button variant="outline" size="sm" className="w-full">
+                      Otimizar
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </main>
     </div>
   )
 }

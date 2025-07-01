@@ -1,4 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
+import { DatabaseService } from '@/lib/database-service'
+
+// Check authentication
+function checkAuth(request: NextRequest) {
+  const cookieStore = cookies()
+  const authToken = cookieStore.get('auth-token')
+  return !!authToken?.value && authToken.value.startsWith('auth_')
+}
 
 // Interface para dados de analytics
 interface AnalyticsData {
@@ -110,31 +119,88 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const type = searchParams.get('type') || 'all'
     
-    const analyticsData = generateRealisticAnalytics()
-    const seoData = generateSEOMetrics()
+    // Try to get real analytics data from database
+    const [analyticsData, seoData] = await Promise.all([
+      DatabaseService.getAnalytics(30),
+      DatabaseService.getSEOData(30)
+    ])
+
+    let responseData
     
     if (type === 'analytics') {
+      const data = analyticsData.length > 0 ? analyticsData[0] : generateRealisticAnalytics()
+      
+      // Save generated data to database if no real data exists
+      if (analyticsData.length === 0) {
+        await DatabaseService.saveAnalytics({
+          date: new Date(),
+          pageViews: data.pageViews,
+          uniqueVisitors: data.uniqueVisitors,
+          bounceRate: data.bounceRate,
+          avgSessionDuration: 180, // Convert time to seconds
+          topPages: [
+            { page: '/', views: Math.floor(data.pageViews * 0.3) },
+            { page: '/produtos', views: Math.floor(data.pageViews * 0.2) },
+            { page: '/categoria/relogios', views: Math.floor(data.pageViews * 0.15) },
+          ],
+          topProducts: [],
+          deviceStats: data.deviceStats,
+          trafficSources: {
+            organic: Math.floor(data.uniqueVisitors * 0.45),
+            direct: Math.floor(data.uniqueVisitors * 0.15),
+            social: Math.floor(data.uniqueVisitors * 0.25),
+            referral: Math.floor(data.uniqueVisitors * 0.15),
+          }
+        })
+      }
+      
       return NextResponse.json({
         success: true,
-        data: analyticsData,
+        data,
         timestamp: new Date().toISOString()
       })
     }
     
     if (type === 'seo') {
+      const data = seoData.length > 0 ? seoData[0] : generateSEOMetrics()
+      
+      // Save generated data to database if no real data exists
+      if (seoData.length === 0) {
+        await DatabaseService.saveSEOData({
+          date: new Date(),
+          organicClicks: data.organicClicks,
+          impressions: data.impressions,
+          averagePosition: data.avgPosition,
+          clickThroughRate: data.ctr,
+          topKeywords: data.topKeywords.map(k => ({
+            keyword: k.keyword,
+            clicks: k.clicks,
+            impressions: k.clicks * 20, // Estimate impressions
+            position: k.position
+          })),
+          topPages: [
+            { page: '/', clicks: Math.floor(data.organicClicks * 0.3), impressions: Math.floor(data.impressions * 0.3) },
+            { page: '/produtos', clicks: Math.floor(data.organicClicks * 0.2), impressions: Math.floor(data.impressions * 0.2) },
+          ]
+        })
+      }
+      
       return NextResponse.json({
         success: true,
-        data: seoData,
+        data,
         timestamp: new Date().toISOString()
       })
     }
     
     // Retornar todos os dados
+    const analyticsResult = analyticsData.length > 0 ? analyticsData[0] : generateRealisticAnalytics()
+    const seoResult = seoData.length > 0 ? seoData[0] : generateSEOMetrics()
+    
     return NextResponse.json({
       success: true,
       data: {
-        analytics: analyticsData,
-        seo: seoData
+        analytics: analyticsResult,
+        seo: seoResult
       },
       timestamp: new Date().toISOString()
     })
@@ -152,7 +218,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { action, orderData } = body
+    const { action, orderData, analyticsData, seoData } = body
     
     if (action === 'track_whatsapp_order') {
       // Aqui você salvaria os dados do pedido em um banco de dados
@@ -163,6 +229,30 @@ export async function POST(request: NextRequest) {
         success: true,
         message: 'Pedido registrado com sucesso',
         orderId: `WA-${Date.now()}`
+      })
+    }
+    
+    if (action === 'save_analytics' && analyticsData) {
+      await DatabaseService.saveAnalytics({
+        date: new Date(),
+        ...analyticsData
+      })
+      
+      return NextResponse.json({
+        success: true,
+        message: 'Dados de analytics salvos com sucesso'
+      })
+    }
+    
+    if (action === 'save_seo' && seoData) {
+      await DatabaseService.saveSEOData({
+        date: new Date(),
+        ...seoData
+      })
+      
+      return NextResponse.json({
+        success: true,
+        message: 'Dados de SEO salvos com sucesso'
       })
     }
     

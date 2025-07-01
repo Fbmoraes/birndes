@@ -1,7 +1,8 @@
-// API route for products CRUD operations
+// API route for products CRUD operations with MongoDB persistence
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import { Database } from '@/lib/database'
+import { DatabaseService } from '@/lib/database-service'
+import { testConnection } from '@/lib/mongodb'
 
 // Check authentication
 function checkAuth(request: NextRequest) {
@@ -13,31 +14,36 @@ function checkAuth(request: NextRequest) {
 // GET - Fetch all data
 export async function GET(request: NextRequest) {
   try {
-    console.log('GET /api/store - Fetching data')
-    const data = await Database.read()
+    console.log('GET /api/store - Fetching data from MongoDB')
     
-    // Add version timestamp and operation info
-    const dataWithVersion = {
-      ...data,
-      version: Date.now(),
-      lastUpdated: new Date().toISOString(),
-      operation: 'read',
-      serverTime: Date.now()
+    // Test connection and initialize if needed
+    const isConnected = await testConnection()
+    if (!isConnected) {
+      throw new Error('Database connection failed')
     }
+
+    // Initialize database with default data if empty
+    try {
+      await DatabaseService.initializeDatabase()
+    } catch (initError) {
+      console.warn('Database initialization warning:', initError)
+    }
+
+    const data = await DatabaseService.getAllData()
     
     console.log('GET /api/store - Data fetched successfully:', {
       productsCount: data.products?.length || 0,
       catalogItemsCount: data.catalogItems?.length || 0,
-      version: dataWithVersion.version
+      version: data.version
     })
     
     // Add aggressive headers to prevent caching on mobile devices
-    const response = NextResponse.json(dataWithVersion)
+    const response = NextResponse.json(data)
     response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0')
     response.headers.set('Pragma', 'no-cache')
     response.headers.set('Expires', '0')
     response.headers.set('Last-Modified', new Date().toUTCString())
-    response.headers.set('ETag', `"${dataWithVersion.version}"`)
+    response.headers.set('ETag', `"${data.version}"`)
     response.headers.set('Vary', 'Accept-Encoding, User-Agent')
     
     // Mobile-specific headers
@@ -82,7 +88,7 @@ export async function POST(request: NextRequest) {
     const body = JSON.parse(bodyText)
     console.log('POST /api/store - Request body:', { 
       type: body.type, 
-      itemName: body.item?.name,
+      itemName: body.item?.name || body.item?.title,
       payloadSize: bodyText.length 
     })
     
@@ -93,9 +99,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing type or item in request body' }, { status: 400 })
     }
 
-    console.log('POST /api/store - Reading database')
-    const data = await Database.read()
-    console.log('POST /api/store - Database read successful, current products:', data.products?.length || 0)
+    let result
     
     if (type === 'products') {
       if (!item.name || !item.description || !item.price || !item.category) {
@@ -103,48 +107,57 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Missing required product fields' }, { status: 400 })
       }
 
-      const newProduct = {
+      // Generate slug
+      const slug = item.name
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9\s-]/g, "")
+        .replace(/\s+/g, "-")
+        .replace(/-+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .trim() || `produto-${Date.now()}`
+
+      const productData = {
         ...item,
-        id: Date.now(),
-        slug: item.name
-          .toLowerCase()
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .replace(/[^a-z0-9\s-]/g, "")
-          .replace(/\s+/g, "-")
-          .replace(/-+/g, "-")
-          .replace(/^-+|-+$/g, "")
-          .trim() || `produto-${Date.now()}`,
+        slug,
+        isActive: true,
       }
       
-      console.log('POST /api/store - Adding new product:', { id: newProduct.id, name: newProduct.name, slug: newProduct.slug })
-      data.products.push(newProduct)
+      console.log('POST /api/store - Creating new product:', { name: productData.name, slug: productData.slug })
+      result = await DatabaseService.createProduct(productData)
       
     } else if (type === 'catalogItems') {
-      const newItem = {
-        ...item,
-        id: Date.now(),
+      if (!item.title || !item.description) {
+        console.error('POST /api/store - Missing required catalog item fields')
+        return NextResponse.json({ error: 'Missing required catalog item fields' }, { status: 400 })
       }
-      console.log('POST /api/store - Adding new catalog item:', { id: newItem.id, title: newItem.title })
-      data.catalogItems.push(newItem)
+
+      const catalogItemData = {
+        ...item,
+        isActive: true,
+      }
+      
+      console.log('POST /api/store - Creating new catalog item:', { title: catalogItemData.title })
+      result = await DatabaseService.createCatalogItem(catalogItemData)
     } else {
       console.error('POST /api/store - Invalid type:', type)
       return NextResponse.json({ error: 'Invalid type' }, { status: 400 })
     }
     
-    console.log('POST /api/store - Writing to database')
-    await Database.write(data)
-    console.log('POST /api/store - Database write successful, total products:', data.products?.length || 0)
+    console.log('POST /api/store - Item created successfully:', result.id)
+    
+    // Get updated data
+    const data = await DatabaseService.getAllData()
     
     // Add version info to response
     const responseData = {
       success: true,
       data: {
         ...data,
-        version: Date.now(),
-        lastUpdated: new Date().toISOString(),
         operation: type === 'products' ? 'product_added' : 'catalog_added'
-      }
+      },
+      created: result
     }
     
     // Add headers to prevent caching
@@ -180,23 +193,25 @@ export async function PUT(request: NextRequest) {
     const body = await request.json()
     const { type, id, item } = body
     
-    const data = await Database.read()
+    if (!type || !id || !item) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    }
+
+    let success = false
     
     if (type === 'products') {
-      const index = data.products.findIndex((p: any) => p.id === id)
-      if (index !== -1) {
-        data.products[index] = { ...data.products[index], ...item }
-      }
+      success = await DatabaseService.updateProduct(id, item)
     } else if (type === 'catalogItems') {
-      const index = data.catalogItems.findIndex((c: any) => c.id === id)
-      if (index !== -1) {
-        data.catalogItems[index] = { ...data.catalogItems[index], ...item }
-      }
+      success = await DatabaseService.updateCatalogItem(id, item)
     } else if (type === 'settings') {
-      data.settings = { ...data.settings, ...item }
+      success = await DatabaseService.updateSettings(item)
     }
     
-    await Database.write(data)
+    if (!success) {
+      return NextResponse.json({ error: 'Failed to update item' }, { status: 404 })
+    }
+
+    const data = await DatabaseService.getAllData()
     return NextResponse.json({ success: true, data })
   } catch (error) {
     console.error('Failed to update item:', error)
@@ -215,15 +230,23 @@ export async function DELETE(request: NextRequest) {
     const body = await request.json()
     const { type, id } = body
     
-    const data = await Database.read()
+    if (!type || !id) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    }
+
+    let success = false
     
     if (type === 'products') {
-      data.products = data.products.filter((p: any) => p.id !== id)
+      success = await DatabaseService.deleteProduct(id)
     } else if (type === 'catalogItems') {
-      data.catalogItems = data.catalogItems.filter((c: any) => c.id !== id)
+      success = await DatabaseService.deleteCatalogItem(id)
     }
     
-    await Database.write(data)
+    if (!success) {
+      return NextResponse.json({ error: 'Failed to delete item' }, { status: 404 })
+    }
+
+    const data = await DatabaseService.getAllData()
     return NextResponse.json({ success: true, data })
   } catch (error) {
     console.error('Failed to delete item:', error)

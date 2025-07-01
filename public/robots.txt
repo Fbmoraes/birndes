@@ -1,22 +1,22 @@
 User-agent: *
 Allow: /
 
-# Sitemap
-Sitemap: https://printsbrindes.com.br/sitemap.xml
-
 # Disallow admin areas
-Disallow: /painel-administrativo/
-Disallow: /area-administrativa/
-Disallow: /api/
+Disallow: /area-administrativa
+Disallow: /painel-administrativo
+Disallow: /admin
 
 # Allow important pages
 Allow: /
 Allow: /produtos
-Allow: /produto/
-Allow: /categoria/
+Allow: /produto/*
+Allow: /categoria/*
 Allow: /sobre-nos
 Allow: /contato
 Allow: /localizacao
 
-# Crawl-delay for better server performance
+# Sitemap location
+Sitemap: https://printsbrindes.com.br/sitemap.xml
+
+# Crawl delay (optional)
 Crawl-delay: 1

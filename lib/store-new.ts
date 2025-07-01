@@ -43,9 +43,6 @@ export interface Settings {
     instagram: string
     whatsapp: string
   }
-  googleAnalyticsId?: string
-  googleSearchConsoleId?: string
-  facebookPixelId?: string
 }
 
 interface Store {
@@ -152,9 +149,6 @@ export const useStore = create<Store>()(
           instagram: "https://instagram.com/printsbrindes",
           whatsapp: "https://wa.me/5521999300409",
         },
-        googleAnalyticsId: "",
-        googleSearchConsoleId: "",
-        facebookPixelId: "",
       },
       cartItems: [],
       isAuthenticated: false,

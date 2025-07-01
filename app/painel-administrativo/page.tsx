@@ -50,7 +50,7 @@ export default function PainelAdministrativoPage() {
   const router = useRouter()
   const { products, catalogItems, addProduct, updateProduct, deleteProduct, addCatalogItem, updateCatalogItem, deleteCatalogItem, isAuthenticated, logout, settings, updateSettings, syncStatus, syncMessage } = useStore()
 
-  const [activeTab, setActiveTab] = useState<"products" | "catalog" | "seo" | "settings">("products")
+  const [activeTab, setActiveTab] = useState<"products" | "catalog" | "settings">("products")
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isCatalogDialogOpen, setIsCatalogDialogOpen] = useState(false)
@@ -684,21 +684,17 @@ ${imageMessage}
                   ? "border-pink-500 text-pink-500"
                   : "border-transparent text-gray-600 hover:text-pink-500"
               }`}
-            >
-              <Palette className="w-4 h-4" />
+            <Palette className="w-4 h-4" />
               <span>Catálogo Início</span>
             </button>
-            <button
-              onClick={() => setActiveTab("seo")}
-              className={`pb-4 border-b-2 font-medium flex items-center space-x-2 ${
-                activeTab === "seo"
-                  ? "border-pink-500 text-pink-500"
-                  : "border-transparent text-gray-600 hover:text-pink-500"
-              }`}
+            <Button
+              onClick={() => router.push('/painel-administrativo/seo')}
+              variant="outline"
+              className="border-pink-500 text-pink-500 hover:bg-pink-50"
             >
-              <Search className="w-4 h-4" />
-              <span>SEO Dashboard</span>
-            </button>
+              <Search className="w-4 h-4 mr-2" />
+              SEO Dashboard
+            </Button>
             <button
               onClick={() => setActiveTab("settings")}
               className={`pb-4 border-b-2 font-medium flex items-center space-x-2 ${
