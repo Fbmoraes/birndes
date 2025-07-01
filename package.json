@@ -7,7 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "test-mongodb": "node scripts/test-mongodb.js",
+    "migrate-mongodb": "node scripts/migrate-to-mongodb.js",
+    "setup-db": "npm run test-mongodb && npm run migrate-mongodb"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.4",

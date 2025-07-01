@@ -430,6 +430,16 @@ export class DatabaseService {
         }))
         await productsCollection.insertMany(productsToInsert)
         console.log('✅ Default products inserted')
+        
+        // Create indexes for products
+        try {
+          await productsCollection.createIndex({ id: 1 }, { unique: true })
+          await productsCollection.createIndex({ slug: 1 }, { unique: true })
+          await productsCollection.createIndex({ isActive: 1 })
+          console.log('✅ Product indexes created')
+        } catch (indexError) {
+          console.warn('⚠️ Product indexes may already exist:', indexError.message)
+        }
       }
 
       // Initialize catalog items
@@ -446,6 +456,16 @@ export class DatabaseService {
         }))
         await catalogCollection.insertMany(catalogItemsToInsert)
         console.log('✅ Default catalog items inserted')
+        
+        // Create indexes for catalog items
+        try {
+          await catalogCollection.createIndex({ id: 1 }, { unique: true })
+          await catalogCollection.createIndex({ slug: 1 }, { unique: true })
+          await catalogCollection.createIndex({ isActive: 1 })
+          console.log('✅ Catalog indexes created')
+        } catch (indexError) {
+          console.warn('⚠️ Catalog indexes may already exist:', indexError.message)
+        }
       }
 
       // Initialize settings
@@ -465,6 +485,7 @@ export class DatabaseService {
       console.log('✅ Database initialization completed')
     } catch (error) {
       console.error('❌ Error initializing database:', error)
+      // Don't throw error to prevent app from crashing
     }
   }
 

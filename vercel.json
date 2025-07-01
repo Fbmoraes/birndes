@@ -1,12 +1,29 @@
 {
-  "version": 2,
   "functions": {
-    "app/api/store/route.ts": {
-      "maxDuration": 10
-    },
-    "app/api/auth/route.ts": {
-      "maxDuration": 10
+    "app/api/**/*.ts": {
+      "maxDuration": 30
     }
-  }
+  },
+  "env": {
+    "MONGODB_URI": "@mongodb_uri",
+    "ADMIN_USERNAME": "@admin_username", 
+    "ADMIN_PASSWORD": "@admin_password",
+    "NEXT_PUBLIC_SITE_URL": "@site_url"
+  },
+  "build": {
+    "env": {
+      "MONGODB_URI": "@mongodb_uri"
+    }
+  },
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
+      ]
+    }
+  ]
 }
-
