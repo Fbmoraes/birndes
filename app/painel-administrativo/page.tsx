@@ -672,8 +672,7 @@ ${imageMessage}
                 activeTab === "products"
                   ? "border-pink-500 text-pink-500"
                   : "border-transparent text-gray-600 hover:text-pink-500"
-              }`}
-            <Package className="w-4 h-4" />
+              }>`}\n            >\n              <Package className="w-4 h-4" />
               <span>Produtos</span>
             </button>
             <button
@@ -1760,3 +1759,4 @@ ${imageMessage}
     </div>
   )
 }
+
