@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { X, Minus, Plus, Trash2, MessageCircle } from "lucide-react"
-import { useStore } from "@/lib/store-new"
+import { useStore } from "@/lib/store"
 import { useGoogleAnalytics } from "./google-analytics"
 
 interface ShoppingCartProps {

@@ -9,7 +9,7 @@ import Image from "next/image"
 import { useState, useEffect } from "react"
 import Header from "@/components/header"
 import ShoppingCartComponent from "@/components/shopping-cart"
-import { useStore, type Product } from "@/lib/store-new"
+import { useStore, type Product } from "@/lib/store"
 
 interface ProductCardProps {
   product: Product
@@ -113,43 +113,16 @@ function ProductCard({ product, onAddToCart }: ProductCardProps) {
 
 export default function ProdutosPage() {
   const [isCartOpen, setIsCartOpen] = useState(false)
-  const { products, addToCart, settings, cartItems, fetchData } = useStore()
+  const { products, addToCart, settings, cartItems, fetchProducts } = useStore()
 
-  // Controlled auto-sync - less frequent to avoid conflicts
+  // Auto-sync products periodically
   useEffect(() => {
-    console.log('Setting up controlled auto-sync every 30 seconds')
-    
     const interval = setInterval(() => {
-      console.log('Auto-syncing data (controlled)...')
-      fetchData().catch(console.error)
-    }, 30000) // 30 seconds to avoid conflicts
+      fetchProducts().catch(console.error)
+    }, 60000) // 1 minute
 
     return () => clearInterval(interval)
-  }, [fetchData])
-
-  // Additional sync on page focus (when user returns to tab)
-  useEffect(() => {
-    const handleFocus = () => {
-      console.log('Page focused - syncing data...')
-      fetchData().catch(console.error)
-    }
-
-    window.addEventListener('focus', handleFocus)
-    return () => window.removeEventListener('focus', handleFocus)
-  }, [fetchData])
-
-  // Sync on page visibility change
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        console.log('Page visible - syncing data...')
-        fetchData().catch(console.error)
-      }
-    }
-
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
-  }, [fetchData])
+  }, [fetchProducts])
 
   const handleContactClick = () => {
     const whatsappNumber = settings.whatsappNumber.replace(/\D/g, "")

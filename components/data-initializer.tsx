@@ -1,10 +1,10 @@
 "use client"
 
 import { useEffect, useState } from 'react'
-import { useStore } from '@/lib/store-new'
+import { useStore } from '@/lib/store'
 
 export function DataInitializer({ children }: { children: React.ReactNode }) {
-  const { fetchData, checkAuth } = useStore()
+  const { fetchProducts, fetchCatalogItems, fetchSettings, checkAuth } = useStore()
   const [isInitializing, setIsInitializing] = useState(true)
   const [initError, setInitError] = useState<string | null>(null)
 
@@ -16,8 +16,16 @@ export function DataInitializer({ children }: { children: React.ReactNode }) {
         setInitError(null)
         
         await Promise.all([
-          fetchData().catch(err => {
-            console.warn('Failed to fetch data:', err)
+          fetchProducts().catch(err => {
+            console.warn('Failed to fetch products:', err)
+            // Don't throw, just log the warning
+          }),
+          fetchCatalogItems().catch(err => {
+            console.warn('Failed to fetch catalog items:', err)
+            // Don't throw, just log the warning
+          }),
+          fetchSettings().catch(err => {
+            console.warn('Failed to fetch settings:', err)
             // Don't throw, just log the warning
           }),
           checkAuth().catch(err => {
@@ -36,14 +44,14 @@ export function DataInitializer({ children }: { children: React.ReactNode }) {
     }
 
     initialize()
-  }, []) // Empty dependency array - only run once on mount
+  }, [fetchProducts, fetchCatalogItems, fetchSettings, checkAuth]) // Dependencies for the hooks
 
   if (isInitializing) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-pink-50 to-white">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Carregando dados...</p>
+          <p className="text-gray-600">Carregando dados do Supabase...</p>
         </div>
       </div>
     )
