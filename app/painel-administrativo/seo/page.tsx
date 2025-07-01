@@ -1,469 +1,282 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Badge } from '@/components/ui/badge'
-import { Progress } from '@/components/ui/progress'
-import { 
-  ArrowLeft, 
-  Search, 
-  TrendingUp, 
-  Eye, 
-  MousePointer, 
-  BarChart3,
-  AlertTriangle,
-  CheckCircle,
-  XCircle,
-  Settings,
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Progress } from "@/components/ui/progress"
+import {
+  ArrowLeft,
+  Search,
+  TrendingUp,
   Globe,
+  Eye,
+  Users,
+  MousePointer,
+  BarChart3,
+  Target,
+  CheckCircle,
+  AlertCircle,
+  ExternalLink,
+  Download,
+  RefreshCw,
+  Settings,
+  Zap,
+  Award,
+  Activity,
+  Calendar,
+  Clock,
+  FileText,
+  Link,
   Smartphone,
   Monitor,
-  Tablet,
-  Users,
-  Clock,
-  Target,
-  Zap,
-  RefreshCw
-} from 'lucide-react'
+  Wifi,
+  Shield
+} from "lucide-react"
+import { useStore } from "@/lib/store-new"
 
-interface SEOMetrics {
-  organicClicks: number
-  impressions: number
-  avgPosition: number
-  ctr: number
-  indexedPages: number
-  topKeywords: Array<{
-    keyword: string
-    position: number
-    clicks: number
-  }>
-  technicalIssues: Array<{
-    type: 'success' | 'warning' | 'error'
-    title: string
-    description: string
-    priority: 'low' | 'medium' | 'high'
-  }>
-}
-
-interface AnalyticsData {
-  pageViews: number
-  uniqueVisitors: number
-  bounceRate: number
-  timeOnSite: string
-  deviceStats: {
-    mobile: number
-    desktop: number
-    tablet: number
-  }
-  trafficSources: Array<{
-    source: string
-    visitors: number
-    percentage: number
-  }>
-}
-
-interface SEOSettings {
-  siteTitle: string
-  siteDescription: string
-  keywords: string
-  customDomain: string
-  googleAnalyticsId: string
-  googleSearchConsoleId: string
-  facebookPixelId: string
-}
-
-export default function SEODashboard() {
+export default function SEODashboardPage() {
   const router = useRouter()
-  const [seoData, setSeoData] = useState<SEOMetrics | null>(null)
-  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [lastUpdate, setLastUpdate] = useState<string>('')
-  const [seoSettings, setSeoSettings] = useState<SEOSettings>({
-    siteTitle: "PrintsBrindes - Presentes e Artigos Personalizados",
-    siteDescription: "Presentes e artigos para festas personalizados! Canecas, cadernos, bolos e muito mais, tudo personalizado do seu jeito!",
-    keywords: "presentes personalizados, brindes, festas, canecas, cadernos, bolos, lembrancinhas, guaratiba, rio de janeiro",
-    customDomain: "",
-    googleAnalyticsId: "",
-    googleSearchConsoleId: "",
-    facebookPixelId: "",
+  const { isAuthenticated, settings, updateSettings } = useStore()
+  
+  const [seoData, setSeoData] = useState({
+    title: "PrintsBrindes - Presentes e Artigos Personalizados",
+    description: "Presentes e artigos para festas personalizados! Canecas, cadernos, bolos e muito mais, tudo personalizado do seu jeito!",
+    keywords: "presentes personalizados, brindes, festas, canecas, cadernos, bolos",
+    googleAnalytics: "",
+    searchConsole: "",
+    facebookPixel: "",
   })
 
+  const [isLoading, setIsLoading] = useState(false)
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+
   useEffect(() => {
-    fetchData()
-  }, [])
-
-  const fetchData = async () => {
-    try {
-      setLoading(true)
-      const response = await fetch('/api/analytics')
-      const result = await response.json()
-      
-      if (result.success) {
-        setAnalyticsData(result.data.analytics)
-        setSeoData(result.data.seo)
-        setLastUpdate(new Date().toLocaleString('pt-BR'))
-      }
-    } catch (error) {
-      console.error('Erro ao buscar dados:', error)
-    } finally {
-      setLoading(false)
+    if (!isAuthenticated) {
+      router.push("/area-administrativa")
     }
-  }
+  }, [isAuthenticated, router])
 
-  const handleSaveSEOSettings = async () => {
+  useEffect(() => {
+    if (settings?.seo) {
+      setSeoData(prev => ({
+        ...prev,
+        title: settings.seo.title || prev.title,
+        description: settings.seo.description || prev.description,
+        keywords: settings.seo.keywords || prev.keywords,
+      }))
+    }
+  }, [settings])
+
+  const handleSaveSEO = async () => {
+    setIsLoading(true)
     try {
-      // Save SEO settings to database
-      const response = await fetch('/api/store', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          type: 'settings',
-          id: 1,
-          item: {
-            seo: {
-              title: seoSettings.siteTitle,
-              description: seoSettings.siteDescription,
-              keywords: seoSettings.keywords,
-              googleAnalyticsId: seoSettings.googleAnalyticsId,
-              googleSearchConsoleId: seoSettings.googleSearchConsoleId,
-              facebookPixelId: seoSettings.facebookPixelId,
-            }
-          }
-        })
+      await updateSettings({
+        seo: {
+          title: seoData.title,
+          description: seoData.description,
+          keywords: seoData.keywords,
+        }
       })
-
-      if (response.ok) {
-        alert("✅ Configurações de SEO salvas com sucesso!")
-      } else {
-        throw new Error('Erro ao salvar configurações')
-      }
+      setLastUpdated(new Date())
+      alert("✅ Configurações de SEO salvas com sucesso!")
     } catch (error) {
-      console.error('Erro ao salvar configurações de SEO:', error)
-      alert("❌ Erro ao salvar configurações. Tente novamente.")
+      console.error("Erro ao salvar configurações de SEO:", error)
+      alert("❌ Erro ao salvar configurações de SEO")
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  const getIssueIcon = (type: string) => {
-    switch (type) {
-      case 'success': return <CheckCircle className="w-5 h-5 text-green-500" />
-      case 'warning': return <AlertTriangle className="w-5 h-5 text-yellow-500" />
-      case 'error': return <XCircle className="w-5 h-5 text-red-500" />
-      default: return <AlertTriangle className="w-5 h-5 text-gray-500" />
-    }
-  }
+  const seoScore = 75 // Mock score - can be calculated based on filled fields
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'bg-red-100 text-red-800'
-      case 'medium': return 'bg-yellow-100 text-yellow-800'
-      case 'low': return 'bg-green-100 text-green-800'
-      default: return 'bg-gray-100 text-gray-800'
-    }
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-4 text-pink-500" />
-          <p className="text-gray-600">Carregando dados do SEO...</p>
-        </div>
-      </div>
-    )
+  if (!isAuthenticated) {
+    return null
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => router.push('/painel-administrativo')}
-                className="flex items-center space-x-2"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                <span>Voltar</span>
-              </Button>
-              <div>
-                <h1 className="text-3xl font-bold text-gray-800">Dashboard SEO Avançado</h1>
-                <p className="text-gray-600">Monitore e otimize a performance do seu site nos mecanismos de busca</p>
-              </div>
+      <header className="bg-white border-b border-gray-200 px-4 py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <Button
+              onClick={() => router.push('/painel-administrativo')}
+              variant="outline"
+              size="sm"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Voltar
+            </Button>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-800">SEO Dashboard</h1>
+              <p className="text-gray-600">Otimização para Motores de Busca</p>
             </div>
-            <div className="flex items-center space-x-4">
-              <div className="text-sm text-gray-500">
-                Última atualização: {lastUpdate}
-              </div>
-              <Button onClick={fetchData} variant="outline" size="sm">
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Atualizar
-              </Button>
-            </div>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Badge variant="outline" className="text-blue-600 border-blue-600">
+              <Activity className="w-3 h-3 mr-1" />
+              Ativo
+            </Badge>
+            {lastUpdated && (
+              <Badge variant="secondary">
+                <Clock className="w-3 h-3 mr-1" />
+                Atualizado {lastUpdated.toLocaleTimeString()}
+              </Badge>
+            )}
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* SEO Score Overview */}
+        <Card className="mb-8 bg-gradient-to-r from-blue-500 to-purple-600 text-white">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold mb-2">Score SEO Geral</h2>
+                <p className="text-blue-100">Análise da otimização do seu site</p>
+              </div>
+              <div className="text-center">
+                <div className="text-4xl font-bold mb-2">{seoScore}/100</div>
+                <Progress value={seoScore} className="w-32 h-3 bg-white/20" />
+                <p className="text-sm mt-2 text-blue-100">
+                  {seoScore >= 80 ? "Excelente" : seoScore >= 60 ? "Bom" : "Precisa melhorar"}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         <Tabs defaultValue="overview" className="space-y-6">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="overview">Visão Geral</TabsTrigger>
-            <TabsTrigger value="keywords">Palavras-chave</TabsTrigger>
-            <TabsTrigger value="technical">Análise Técnica</TabsTrigger>
             <TabsTrigger value="settings">Configurações</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            <TabsTrigger value="tools">Ferramentas</TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
-            {/* Key Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Metrics Cards */}
+            <div className="grid md:grid-cols-4 gap-6">
               <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Cliques Orgânicos</CardTitle>
-                  <MousePointer className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{seoData?.organicClicks || 0}</div>
-                  <p className="text-xs text-muted-foreground">
-                    +12% em relação ao mês anterior
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Impressões</CardTitle>
-                  <Eye className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{seoData?.impressions || 0}</div>
-                  <p className="text-xs text-muted-foreground">
-                    +8% em relação ao mês anterior
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Posição Média</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{seoData?.avgPosition || 0}</div>
-                  <p className="text-xs text-muted-foreground">
-                    -0.5 posições (melhoria)
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">CTR</CardTitle>
-                  <Target className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{seoData?.ctr || 0}%</div>
-                  <p className="text-xs text-muted-foreground">
-                    +0.3% em relação ao mês anterior
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Traffic Sources and Device Stats */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Fontes de Tráfego</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {analyticsData?.trafficSources.map((source, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-3 h-3 rounded-full bg-pink-500"></div>
-                        <span className="text-sm font-medium">{source.source}</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm text-gray-600">{source.visitors}</span>
-                        <Badge variant="secondary">{source.percentage}%</Badge>
-                      </div>
+                <CardContent className="p-6">
+                  <div className="flex items-center space-x-4">
+                    <div className="bg-blue-100 rounded-full w-12 h-12 flex items-center justify-center">
+                      <Eye className="w-6 h-6 text-blue-500" />
                     </div>
-                  ))}
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Dispositivos</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <Smartphone className="w-4 h-4 text-blue-500" />
-                      <span className="text-sm font-medium">Mobile</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-gray-600">{analyticsData?.deviceStats.mobile || 0}</span>
-                      <Badge variant="secondary">65%</Badge>
+                    <div>
+                      <p className="text-gray-600 text-sm">Visualizações</p>
+                      <p className="text-2xl font-bold text-gray-800">-</p>
+                      <p className="text-gray-500 text-sm">Configure Analytics</p>
                     </div>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <Monitor className="w-4 h-4 text-green-500" />
-                      <span className="text-sm font-medium">Desktop</span>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center space-x-4">
+                    <div className="bg-green-100 rounded-full w-12 h-12 flex items-center justify-center">
+                      <Users className="w-6 h-6 text-green-500" />
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-gray-600">{analyticsData?.deviceStats.desktop || 0}</span>
-                      <Badge variant="secondary">25%</Badge>
+                    <div>
+                      <p className="text-gray-600 text-sm">Visitantes</p>
+                      <p className="text-2xl font-bold text-gray-800">-</p>
+                      <p className="text-gray-500 text-sm">Configure Analytics</p>
                     </div>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <Tablet className="w-4 h-4 text-purple-500" />
-                      <span className="text-sm font-medium">Tablet</span>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center space-x-4">
+                    <div className="bg-yellow-100 rounded-full w-12 h-12 flex items-center justify-center">
+                      <MousePointer className="w-6 h-6 text-yellow-600" />
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-gray-600">{analyticsData?.deviceStats.tablet || 0}</span>
-                      <Badge variant="secondary">10%</Badge>
+                    <div>
+                      <p className="text-gray-600 text-sm">Taxa de Cliques</p>
+                      <p className="text-2xl font-bold text-gray-800">-</p>
+                      <p className="text-gray-500 text-sm">Configure Search Console</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center space-x-4">
+                    <div className="bg-purple-100 rounded-full w-12 h-12 flex items-center justify-center">
+                      <BarChart3 className="w-6 h-6 text-purple-500" />
+                    </div>
+                    <div>
+                      <p className="text-gray-600 text-sm">Posição Média</p>
+                      <p className="text-2xl font-bold text-gray-800">-</p>
+                      <p className="text-gray-500 text-sm">Configure Search Console</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Site Performance */}
+            {/* SEO Health Check */}
             <Card>
               <CardHeader>
-                <CardTitle>Performance do Site</CardTitle>
+                <CardTitle className="flex items-center">
+                  <Shield className="w-5 h-5 mr-2" />
+                  Verificação de Saúde SEO
+                </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-green-600">{analyticsData?.pageViews || 0}</div>
-                    <p className="text-sm text-gray-600">Visualizações</p>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <CheckCircle className="w-5 h-5 text-green-500" />
+                    <div>
+                      <p className="font-medium text-gray-800">Título SEO Configurado</p>
+                      <p className="text-sm text-gray-600">Título principal está definido</p>
+                    </div>
                   </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-blue-600">{analyticsData?.uniqueVisitors || 0}</div>
-                    <p className="text-sm text-gray-600">Visitantes Únicos</p>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-purple-600">{analyticsData?.bounceRate || 0}%</div>
-                    <p className="text-sm text-gray-600">Taxa de Rejeição</p>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-orange-600">{analyticsData?.timeOnSite || '0m 0s'}</div>
-                    <p className="text-sm text-gray-600">Tempo no Site</p>
-                  </div>
+                  <Badge className="bg-green-100 text-green-700">OK</Badge>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
 
-          {/* Keywords Tab */}
-          <TabsContent value="keywords" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Top Palavras-chave</CardTitle>
-                <p className="text-sm text-gray-600">Palavras-chave que mais trazem tráfego para seu site</p>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {seoData?.topKeywords.map((keyword, index) => (
-                    <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex-1">
-                        <h4 className="font-medium">{keyword.keyword}</h4>
-                        <div className="flex items-center space-x-4 mt-2">
-                          <span className="text-sm text-gray-600">Posição: {keyword.position}</span>
-                          <span className="text-sm text-gray-600">Cliques: {keyword.clicks}</span>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <Badge 
-                          variant={keyword.position <= 3 ? "default" : keyword.position <= 10 ? "secondary" : "outline"}
-                        >
-                          #{keyword.position}
-                        </Badge>
-                      </div>
+                <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <CheckCircle className="w-5 h-5 text-green-500" />
+                    <div>
+                      <p className="font-medium text-gray-800">Meta Descrição Configurada</p>
+                      <p className="text-sm text-gray-600">Descrição meta está definida</p>
                     </div>
-                  ))}
+                  </div>
+                  <Badge className="bg-green-100 text-green-700">OK</Badge>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
 
-          {/* Technical Tab */}
-          <TabsContent value="technical" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Análise Técnica SEO</CardTitle>
-                <p className="text-sm text-gray-600">Problemas técnicos que podem afetar seu ranking</p>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {seoData?.technicalIssues.map((issue, index) => (
-                    <div key={index} className="flex items-start space-x-4 p-4 border rounded-lg">
-                      {getIssueIcon(issue.type)}
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between">
-                          <h4 className="font-medium">{issue.title}</h4>
-                          <Badge className={getPriorityColor(issue.priority)}>
-                            {issue.priority === 'high' ? 'Alta' : issue.priority === 'medium' ? 'Média' : 'Baixa'}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-gray-600 mt-1">{issue.description}</p>
-                      </div>
+                <div className="flex items-center justify-between p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <AlertCircle className="w-5 h-5 text-yellow-500" />
+                    <div>
+                      <p className="font-medium text-gray-800">Google Analytics</p>
+                      <p className="text-sm text-gray-600">Configure para acompanhar o tráfego</p>
                     </div>
-                  ))}
+                  </div>
+                  <Badge className="bg-yellow-100 text-yellow-700">Pendente</Badge>
                 </div>
-              </CardContent>
-            </Card>
 
-            {/* SEO Score */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Score SEO Geral</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm font-medium">Performance Técnica</span>
-                      <span className="text-sm text-gray-600">85/100</span>
+                <div className="flex items-center justify-between p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <AlertCircle className="w-5 h-5 text-yellow-500" />
+                    <div>
+                      <p className="font-medium text-gray-800">Google Search Console</p>
+                      <p className="text-sm text-gray-600">Verifique seu site no Search Console</p>
                     </div>
-                    <Progress value={85} className="h-2" />
                   </div>
-                  <div>
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm font-medium">Otimização de Conteúdo</span>
-                      <span className="text-sm text-gray-600">78/100</span>
-                    </div>
-                    <Progress value={78} className="h-2" />
-                  </div>
-                  <div>
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm font-medium">Experiência do Usuário</span>
-                      <span className="text-sm text-gray-600">92/100</span>
-                    </div>
-                    <Progress value={92} className="h-2" />
-                  </div>
-                  <div>
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm font-medium">Score Geral</span>
-                      <span className="text-sm font-bold text-green-600">85/100</span>
-                    </div>
-                    <Progress value={85} className="h-3" />
-                  </div>
+                  <Badge className="bg-yellow-100 text-yellow-700">Pendente</Badge>
                 </div>
               </CardContent>
             </Card>
@@ -471,122 +284,189 @@ export default function SEODashboard() {
 
           {/* Settings Tab */}
           <TabsContent value="settings" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Configurações SEO</CardTitle>
-                <p className="text-sm text-gray-600">Configure as informações básicas do seu site</p>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="siteTitle">Título Principal do Site</Label>
-                      <Input
-                        id="siteTitle"
-                        value={seoSettings.siteTitle}
-                        onChange={(e) => setSeoSettings({ ...seoSettings, siteTitle: e.target.value })}
-                        placeholder="Título do seu site"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="siteDescription">Descrição Meta</Label>
-                      <Textarea
-                        id="siteDescription"
-                        value={seoSettings.siteDescription}
-                        onChange={(e) => setSeoSettings({ ...seoSettings, siteDescription: e.target.value })}
-                        placeholder="Descrição do seu site"
-                        rows={3}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="keywords">Palavras-chave Principais</Label>
-                      <Textarea
-                        id="keywords"
-                        value={seoSettings.keywords}
-                        onChange={(e) => setSeoSettings({ ...seoSettings, keywords: e.target.value })}
-                        placeholder="palavra1, palavra2, palavra3"
-                        rows={2}
-                      />
-                    </div>
+            <div className="grid md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Search className="w-5 h-5 mr-2" />
+                    Configurações SEO Básicas
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label htmlFor="seoTitle">Título Principal do Site</Label>
+                    <Input
+                      id="seoTitle"
+                      value={seoData.title}
+                      onChange={(e) => setSeoData({ ...seoData, title: e.target.value })}
+                      className="mt-1"
+                      maxLength={60}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      {seoData.title.length}/60 caracteres
+                    </p>
                   </div>
-                  
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="googleAnalytics">Google Analytics ID</Label>
-                      <Input
-                        id="googleAnalytics"
-                        value={seoSettings.googleAnalyticsId}
-                        onChange={(e) => setSeoSettings({ ...seoSettings, googleAnalyticsId: e.target.value })}
-                        placeholder="G-XXXXXXXXXX"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="searchConsole">Google Search Console</Label>
-                      <Input
-                        id="searchConsole"
-                        value={seoSettings.googleSearchConsoleId}
-                        onChange={(e) => setSeoSettings({ ...seoSettings, googleSearchConsoleId: e.target.value })}
-                        placeholder="Código de verificação"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="facebookPixel">Facebook Pixel ID</Label>
-                      <Input
-                        id="facebookPixel"
-                        value={seoSettings.facebookPixelId}
-                        onChange={(e) => setSeoSettings({ ...seoSettings, facebookPixelId: e.target.value })}
-                        placeholder="123456789012345"
-                      />
-                    </div>
+                  <div>
+                    <Label htmlFor="seoDescription">Descrição Meta</Label>
+                    <Textarea
+                      id="seoDescription"
+                      value={seoData.description}
+                      onChange={(e) => setSeoData({ ...seoData, description: e.target.value })}
+                      rows={3}
+                      className="mt-1"
+                      maxLength={160}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      {seoData.description.length}/160 caracteres
+                    </p>
                   </div>
-                </div>
-                
-                <div className="flex justify-end">
-                  <Button onClick={handleSaveSEOSettings} className="bg-pink-500 hover:bg-pink-600 text-white">
-                    <Settings className="w-4 h-4 mr-2" />
-                    Salvar Configurações
+                  <div>
+                    <Label htmlFor="seoKeywords">Palavras-chave Principais</Label>
+                    <Input
+                      id="seoKeywords"
+                      value={seoData.keywords}
+                      onChange={(e) => setSeoData({ ...seoData, keywords: e.target.value })}
+                      className="mt-1"
+                      placeholder="palavra1, palavra2, palavra3"
+                    />
+                  </div>
+                  <Button 
+                    onClick={handleSaveSEO} 
+                    className="w-full bg-blue-500 hover:bg-blue-600 text-white"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? "Salvando..." : "Salvar Configurações SEO"}
                   </Button>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
 
-            {/* SEO Tools */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Ferramentas SEO</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="text-center p-6 border rounded-lg">
-                    <BarChart3 className="w-8 h-8 text-purple-500 mx-auto mb-2" />
-                    <h3 className="font-medium text-gray-800 mb-2">Relatório SEO</h3>
-                    <p className="text-sm text-gray-600 mb-4">Gere um relatório completo</p>
-                    <Button variant="outline" size="sm" className="w-full">
-                      Gerar Relatório
-                    </Button>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <BarChart3 className="w-5 h-5 mr-2" />
+                    Ferramentas de Analytics
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label htmlFor="googleAnalytics">Google Analytics ID</Label>
+                    <Input 
+                      id="googleAnalytics" 
+                      value={seoData.googleAnalytics}
+                      onChange={(e) => setSeoData({ ...seoData, googleAnalytics: e.target.value })}
+                      placeholder="G-XXXXXXXXXX" 
+                      className="mt-1" 
+                    />
                   </div>
-                  <div className="text-center p-6 border rounded-lg">
-                    <Search className="w-8 h-8 text-blue-500 mx-auto mb-2" />
-                    <h3 className="font-medium text-gray-800 mb-2">Análise de Palavras-chave</h3>
-                    <p className="text-sm text-gray-600 mb-4">Descubra novas oportunidades</p>
-                    <Button variant="outline" size="sm" className="w-full">
-                      Analisar
-                    </Button>
+                  <div>
+                    <Label htmlFor="searchConsole">Google Search Console</Label>
+                    <Input 
+                      id="searchConsole" 
+                      value={seoData.searchConsole}
+                      onChange={(e) => setSeoData({ ...seoData, searchConsole: e.target.value })}
+                      placeholder="Código de verificação" 
+                      className="mt-1" 
+                    />
                   </div>
-                  <div className="text-center p-6 border rounded-lg">
-                    <Zap className="w-8 h-8 text-green-500 mx-auto mb-2" />
-                    <h3 className="font-medium text-gray-800 mb-2">Otimização Automática</h3>
-                    <p className="text-sm text-gray-600 mb-4">Aplique melhorias automaticamente</p>
-                    <Button variant="outline" size="sm" className="w-full">
-                      Otimizar
-                    </Button>
+                  <div>
+                    <Label htmlFor="facebookPixel">Facebook Pixel ID</Label>
+                    <Input 
+                      id="facebookPixel" 
+                      value={seoData.facebookPixel}
+                      onChange={(e) => setSeoData({ ...seoData, facebookPixel: e.target.value })}
+                      placeholder="123456789012345" 
+                      className="mt-1" 
+                    />
+                  </div>
+                  <Button className="w-full bg-green-500 hover:bg-green-600 text-white">
+                    Conectar Ferramentas
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Analytics Tab */}
+          <TabsContent value="analytics" className="space-y-6">
+            <div className="text-center py-12">
+              <Activity className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-800 mb-2">Analytics em Preparação</h3>
+              <p className="text-gray-600 mb-6">
+                Configure o Google Analytics para ver dados detalhados aqui
+              </p>
+              <Button variant="outline">
+                <ExternalLink className="w-4 h-4 mr-2" />
+                Configurar Google Analytics
+              </Button>
+            </div>
+          </TabsContent>
+
+          {/* Tools Tab */}
+          <TabsContent value="tools" className="space-y-6">
+            <div className="grid md:grid-cols-3 gap-6">
+              <Card>
+                <CardContent className="p-6 text-center">
+                  <Globe className="w-12 h-12 text-blue-500 mx-auto mb-4" />
+                  <h3 className="font-semibold text-gray-800 mb-2">Sitemap.xml</h3>
+                  <p className="text-sm text-gray-600 mb-4">Mapa do site para motores de busca</p>
+                  <Button variant="outline" size="sm" className="w-full">
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    Visualizar
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6 text-center">
+                  <Target className="w-12 h-12 text-green-500 mx-auto mb-4" />
+                  <h3 className="font-semibold text-gray-800 mb-2">Robots.txt</h3>
+                  <p className="text-sm text-gray-600 mb-4">Instruções para crawlers</p>
+                  <Button variant="outline" size="sm" className="w-full">
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    Visualizar
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6 text-center">
+                  <FileText className="w-12 h-12 text-purple-500 mx-auto mb-4" />
+                  <h3 className="font-semibold text-gray-800 mb-2">Relatório SEO</h3>
+                  <p className="text-sm text-gray-600 mb-4">Análise completa do site</p>
+                  <Button variant="outline" size="sm" className="w-full">
+                    <Download className="w-4 h-4 mr-2" />
+                    Baixar
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Quick Actions */}
+            <Card className="bg-gradient-to-r from-blue-500 to-purple-600 text-white">
+              <CardContent className="p-6">
+                <h3 className="text-xl font-bold mb-4 flex items-center">
+                  <Zap className="w-6 h-6 mr-2" />
+                  Próximos Passos para Melhorar seu SEO
+                </h3>
+                <div className="grid md:grid-cols-3 gap-4">
+                  <div className="bg-white bg-opacity-20 p-4 rounded-lg">
+                    <h4 className="font-medium mb-2">1. Configure Google Analytics</h4>
+                    <p className="text-sm opacity-90">Monitore o tráfego e comportamento dos usuários</p>
+                  </div>
+                  <div className="bg-white bg-opacity-20 p-4 rounded-lg">
+                    <h4 className="font-medium mb-2">2. Verifique Search Console</h4>
+                    <p className="text-sm opacity-90">Monitore como o Google vê seu site</p>
+                  </div>
+                  <div className="bg-white bg-opacity-20 p-4 rounded-lg">
+                    <h4 className="font-medium mb-2">3. Otimize Conteúdo</h4>
+                    <p className="text-sm opacity-90">Melhore descrições e palavras-chave</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
-      </main>
+      </div>
     </div>
   )
 }

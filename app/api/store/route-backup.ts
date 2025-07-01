@@ -1,8 +1,8 @@
-// API route for products CRUD operations with MongoDB persistence and fallback
+// API route for products CRUD operations with MongoDB persistence
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import { DatabaseService } from '@/lib/database-service-safe'
-import { testConnection } from '@/lib/mongodb-safe'
+import { DatabaseService } from '@/lib/database-service'
+import { testConnection } from '@/lib/mongodb'
 
 // Check authentication
 function checkAuth(request: NextRequest) {
@@ -14,13 +14,15 @@ function checkAuth(request: NextRequest) {
 // GET - Fetch all data
 export async function GET(request: NextRequest) {
   try {
-    console.log('GET /api/store - Fetching data')
+    console.log('GET /api/store - Fetching data from MongoDB')
     
-    // Test connection (will use fallback if MongoDB not available)
+    // Test connection and initialize if needed
     const isConnected = await testConnection()
-    console.log('Database connection status:', isConnected ? 'Connected' : 'Using fallback')
+    if (!isConnected) {
+      throw new Error('Database connection failed')
+    }
 
-    // Initialize database with default data if needed
+    // Initialize database with default data if empty
     try {
       await DatabaseService.initializeDatabase()
     } catch (initError) {
@@ -251,3 +253,4 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to delete item' }, { status: 500 })
   }
 }
+
