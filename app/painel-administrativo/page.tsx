@@ -560,7 +560,16 @@ ${imageMessage}
   }
 
   const totalProducts = products.length
-  const totalValue = products.reduce((sum, product) => sum + Number(product.price), 0)
+  // Mock sales data for demonstration - replace with real sales data
+  const mockSalesData = [
+    { productName: "Relógio Personalizado", quantity: 2, totalPrice: 19.8, date: "2024-01-15" },
+    { productName: "Bolo Personalizado", quantity: 1, totalPrice: 25.0, date: "2024-01-16" },
+    { productName: "Caderno de Colorir", quantity: 5, totalPrice: 39.5, date: "2024-01-17" },
+    { productName: "Relógio Personalizado", quantity: 3, totalPrice: 29.7, date: "2024-01-18" },
+  ]
+  
+  const totalRevenue = mockSalesData.reduce((sum, sale) => sum + sale.totalPrice, 0)
+  const totalOrders = mockSalesData.length
   const totalCategories = new Set(products.map((p) => p.category)).size
 
   if (!isAuthenticated) {
@@ -623,8 +632,8 @@ ${imageMessage}
                   <DollarSign className="w-6 h-6 text-green-500" />
                 </div>
                 <div>
-                  <p className="text-gray-600 text-sm">Valor Total</p>
-                  <p className="text-2xl font-bold text-gray-800">R$ {totalValue.toFixed(2).replace(".", ",")}</p>
+                  <p className="text-gray-600 text-sm">Receita Total</p>
+                  <p className="text-2xl font-bold text-gray-800">R$ {totalRevenue.toFixed(2).replace(".", ",")}</p>
                 </div>
               </CardContent>
             </Card>

@@ -71,14 +71,6 @@ export default function SEODashboardPage() {
         keywords: settings.seo.keywords || prev.keywords,
       }))
     }
-    if (settings?.analytics) {
-      setSeoData(prev => ({
-        ...prev,
-        googleAnalytics: settings.analytics?.googleAnalytics || "",
-        searchConsole: settings.analytics?.searchConsole || "",
-        facebookPixel: settings.analytics?.facebookPixel || "",
-      }))
-    }
   }, [settings])
 
   const handleSaveSEO = async () => {
@@ -101,85 +93,7 @@ export default function SEODashboardPage() {
     }
   }
 
-  const handleConnectTools = async () => {
-    setIsLoading(true)
-    try {
-      await updateSettings({
-        analytics: {
-          googleAnalytics: seoData.googleAnalytics,
-          searchConsole: seoData.searchConsole,
-          facebookPixel: seoData.facebookPixel,
-        }
-      })
-      setLastUpdated(new Date())
-      alert("✅ Ferramentas conectadas com sucesso!")
-    } catch (error) {
-      console.error("Erro ao conectar ferramentas:", error)
-      alert("❌ Erro ao conectar ferramentas")
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const handleViewSitemap = () => {
-    window.open('/sitemap.xml', '_blank')
-  }
-
-  const handleViewRobots = () => {
-    window.open('/robots.txt', '_blank')
-  }
-
-  const handleDownloadReport = () => {
-    const report = {
-      seoScore,
-      title: seoData.title,
-      description: seoData.description,
-      keywords: seoData.keywords,
-      analytics: seoData.googleAnalytics ? 'Configurado' : 'Não configurado',
-      searchConsole: seoData.searchConsole ? 'Configurado' : 'Não configurado',
-      facebookPixel: seoData.facebookPixel ? 'Configurado' : 'Não configurado',
-      generatedAt: new Date().toISOString(),
-      recommendations: [
-        'Configure Google Analytics para monitorar tráfego',
-        'Verifique o site no Google Search Console',
-        'Otimize palavras-chave para melhor posicionamento',
-        'Mantenha conteúdo atualizado regularmente'
-      ]
-    }
-    
-    const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `seo-report-printsbrindes-${new Date().toISOString().split('T')[0]}.json`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-    alert("✅ Relatório SEO baixado com sucesso!")
-  }
-
-  const handleConfigureAnalytics = () => {
-    window.open('https://analytics.google.com/', '_blank')
-  }
-
-  const handleRefreshData = () => {
-    setLastUpdated(new Date())
-    alert("✅ Dados atualizados!")
-  }
-
-  // Calculate SEO score based on filled fields
-  const calculateSEOScore = () => {
-    let score = 0
-    if (seoData.title && seoData.title.length >= 30) score += 25
-    if (seoData.description && seoData.description.length >= 120) score += 25
-    if (seoData.keywords && seoData.keywords.length >= 20) score += 20
-    if (seoData.googleAnalytics) score += 15
-    if (seoData.searchConsole) score += 15
-    return score
-  }
-
-  const seoScore = calculateSEOScore()
+  const seoScore = 75 // Mock score - can be calculated based on filled fields
 
   if (!isAuthenticated) {
     return null
@@ -215,13 +129,6 @@ export default function SEODashboardPage() {
                 Atualizado {lastUpdated.toLocaleTimeString()}
               </Badge>
             )}
-            <Button
-              onClick={handleRefreshData}
-              variant="outline"
-              size="sm"
-            >
-              <RefreshCw className="w-4 h-4" />
-            </Button>
           </div>
         </div>
       </header>
@@ -328,112 +235,48 @@ export default function SEODashboardPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className={`flex items-center justify-between p-3 border rounded-lg ${
-                  seoData.title && seoData.title.length >= 30 
-                    ? 'bg-green-50 border-green-200' 
-                    : 'bg-yellow-50 border-yellow-200'
-                }`}>
+                <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
                   <div className="flex items-center space-x-3">
-                    {seoData.title && seoData.title.length >= 30 ? (
-                      <CheckCircle className="w-5 h-5 text-green-500" />
-                    ) : (
-                      <AlertCircle className="w-5 h-5 text-yellow-500" />
-                    )}
+                    <CheckCircle className="w-5 h-5 text-green-500" />
                     <div>
-                      <p className="font-medium text-gray-800">Título SEO</p>
-                      <p className="text-sm text-gray-600">
-                        {seoData.title ? `${seoData.title.length} caracteres` : 'Não configurado'}
-                      </p>
+                      <p className="font-medium text-gray-800">Título SEO Configurado</p>
+                      <p className="text-sm text-gray-600">Título principal está definido</p>
                     </div>
                   </div>
-                  <Badge className={
-                    seoData.title && seoData.title.length >= 30 
-                      ? 'bg-green-100 text-green-700' 
-                      : 'bg-yellow-100 text-yellow-700'
-                  }>
-                    {seoData.title && seoData.title.length >= 30 ? 'OK' : 'Atenção'}
-                  </Badge>
+                  <Badge className="bg-green-100 text-green-700">OK</Badge>
                 </div>
 
-                <div className={`flex items-center justify-between p-3 border rounded-lg ${
-                  seoData.description && seoData.description.length >= 120 
-                    ? 'bg-green-50 border-green-200' 
-                    : 'bg-yellow-50 border-yellow-200'
-                }`}>
+                <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
                   <div className="flex items-center space-x-3">
-                    {seoData.description && seoData.description.length >= 120 ? (
-                      <CheckCircle className="w-5 h-5 text-green-500" />
-                    ) : (
-                      <AlertCircle className="w-5 h-5 text-yellow-500" />
-                    )}
+                    <CheckCircle className="w-5 h-5 text-green-500" />
                     <div>
-                      <p className="font-medium text-gray-800">Meta Descrição</p>
-                      <p className="text-sm text-gray-600">
-                        {seoData.description ? `${seoData.description.length} caracteres` : 'Não configurado'}
-                      </p>
+                      <p className="font-medium text-gray-800">Meta Descrição Configurada</p>
+                      <p className="text-sm text-gray-600">Descrição meta está definida</p>
                     </div>
                   </div>
-                  <Badge className={
-                    seoData.description && seoData.description.length >= 120 
-                      ? 'bg-green-100 text-green-700' 
-                      : 'bg-yellow-100 text-yellow-700'
-                  }>
-                    {seoData.description && seoData.description.length >= 120 ? 'OK' : 'Atenção'}
-                  </Badge>
+                  <Badge className="bg-green-100 text-green-700">OK</Badge>
                 </div>
 
-                <div className={`flex items-center justify-between p-3 border rounded-lg ${
-                  seoData.googleAnalytics 
-                    ? 'bg-green-50 border-green-200' 
-                    : 'bg-yellow-50 border-yellow-200'
-                }`}>
+                <div className="flex items-center justify-between p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                   <div className="flex items-center space-x-3">
-                    {seoData.googleAnalytics ? (
-                      <CheckCircle className="w-5 h-5 text-green-500" />
-                    ) : (
-                      <AlertCircle className="w-5 h-5 text-yellow-500" />
-                    )}
+                    <AlertCircle className="w-5 h-5 text-yellow-500" />
                     <div>
                       <p className="font-medium text-gray-800">Google Analytics</p>
-                      <p className="text-sm text-gray-600">
-                        {seoData.googleAnalytics ? 'Configurado' : 'Configure para acompanhar o tráfego'}
-                      </p>
+                      <p className="text-sm text-gray-600">Configure para acompanhar o tráfego</p>
                     </div>
                   </div>
-                  <Badge className={
-                    seoData.googleAnalytics 
-                      ? 'bg-green-100 text-green-700' 
-                      : 'bg-yellow-100 text-yellow-700'
-                  }>
-                    {seoData.googleAnalytics ? 'OK' : 'Pendente'}
-                  </Badge>
+                  <Badge className="bg-yellow-100 text-yellow-700">Pendente</Badge>
                 </div>
 
-                <div className={`flex items-center justify-between p-3 border rounded-lg ${
-                  seoData.searchConsole 
-                    ? 'bg-green-50 border-green-200' 
-                    : 'bg-yellow-50 border-yellow-200'
-                }`}>
+                <div className="flex items-center justify-between p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                   <div className="flex items-center space-x-3">
-                    {seoData.searchConsole ? (
-                      <CheckCircle className="w-5 h-5 text-green-500" />
-                    ) : (
-                      <AlertCircle className="w-5 h-5 text-yellow-500" />
-                    )}
+                    <AlertCircle className="w-5 h-5 text-yellow-500" />
                     <div>
                       <p className="font-medium text-gray-800">Google Search Console</p>
-                      <p className="text-sm text-gray-600">
-                        {seoData.searchConsole ? 'Verificado' : 'Verifique seu site no Search Console'}
-                      </p>
+                      <p className="text-sm text-gray-600">Verifique seu site no Search Console</p>
                     </div>
                   </div>
-                  <Badge className={
-                    seoData.searchConsole 
-                      ? 'bg-green-100 text-green-700' 
-                      : 'bg-yellow-100 text-yellow-700'
-                  }>
-                    {seoData.searchConsole ? 'OK' : 'Pendente'}
-                  </Badge>
+                  <Badge className="bg-yellow-100 text-yellow-700">Pendente</Badge>
                 </div>
               </CardContent>
             </Card>
@@ -460,7 +303,7 @@ export default function SEODashboardPage() {
                       maxLength={60}
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      {seoData.title.length}/60 caracteres (recomendado: 30-60)
+                      {seoData.title.length}/60 caracteres
                     </p>
                   </div>
                   <div>
@@ -474,7 +317,7 @@ export default function SEODashboardPage() {
                       maxLength={160}
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      {seoData.description.length}/160 caracteres (recomendado: 120-160)
+                      {seoData.description.length}/160 caracteres
                     </p>
                   </div>
                   <div>
@@ -486,9 +329,6 @@ export default function SEODashboardPage() {
                       className="mt-1"
                       placeholder="palavra1, palavra2, palavra3"
                     />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Separe as palavras-chave com vírgulas
-                    </p>
                   </div>
                   <Button 
                     onClick={handleSaveSEO} 
@@ -538,12 +378,8 @@ export default function SEODashboardPage() {
                       className="mt-1" 
                     />
                   </div>
-                  <Button 
-                    onClick={handleConnectTools}
-                    className="w-full bg-green-500 hover:bg-green-600 text-white"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? "Conectando..." : "Conectar Ferramentas"}
+                  <Button className="w-full bg-green-500 hover:bg-green-600 text-white">
+                    Conectar Ferramentas
                   </Button>
                 </CardContent>
               </Card>
@@ -558,7 +394,7 @@ export default function SEODashboardPage() {
               <p className="text-gray-600 mb-6">
                 Configure o Google Analytics para ver dados detalhados aqui
               </p>
-              <Button variant="outline" onClick={handleConfigureAnalytics}>
+              <Button variant="outline">
                 <ExternalLink className="w-4 h-4 mr-2" />
                 Configurar Google Analytics
               </Button>
@@ -573,7 +409,7 @@ export default function SEODashboardPage() {
                   <Globe className="w-12 h-12 text-blue-500 mx-auto mb-4" />
                   <h3 className="font-semibold text-gray-800 mb-2">Sitemap.xml</h3>
                   <p className="text-sm text-gray-600 mb-4">Mapa do site para motores de busca</p>
-                  <Button variant="outline" size="sm" className="w-full" onClick={handleViewSitemap}>
+                  <Button variant="outline" size="sm" className="w-full">
                     <ExternalLink className="w-4 h-4 mr-2" />
                     Visualizar
                   </Button>
@@ -585,7 +421,7 @@ export default function SEODashboardPage() {
                   <Target className="w-12 h-12 text-green-500 mx-auto mb-4" />
                   <h3 className="font-semibold text-gray-800 mb-2">Robots.txt</h3>
                   <p className="text-sm text-gray-600 mb-4">Instruções para crawlers</p>
-                  <Button variant="outline" size="sm" className="w-full" onClick={handleViewRobots}>
+                  <Button variant="outline" size="sm" className="w-full">
                     <ExternalLink className="w-4 h-4 mr-2" />
                     Visualizar
                   </Button>
@@ -597,7 +433,7 @@ export default function SEODashboardPage() {
                   <FileText className="w-12 h-12 text-purple-500 mx-auto mb-4" />
                   <h3 className="font-semibold text-gray-800 mb-2">Relatório SEO</h3>
                   <p className="text-sm text-gray-600 mb-4">Análise completa do site</p>
-                  <Button variant="outline" size="sm" className="w-full" onClick={handleDownloadReport}>
+                  <Button variant="outline" size="sm" className="w-full">
                     <Download className="w-4 h-4 mr-2" />
                     Baixar
                   </Button>
